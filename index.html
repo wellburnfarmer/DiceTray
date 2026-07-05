@@ -744,7 +744,13 @@ let advCreamRole = 'original'; // 'original' | 'duplicate'
 
 function poolCounts() {
   const counts = {};
-  order.forEach((sides) => { counts[sides] = (counts[sides] || 0) + 1; });
+  for (let i = 0; i < order.length; i++) {
+    const sides = order[i];
+    counts[sides] = (counts[sides] || 0) + 1;
+    // d100 is stored with its companion d10 immediately after; don't count
+    // that d10 as a separate standalone die in the group list.
+    if (sides === 100 && order[i + 1] === 10) i++;
+  }
   return counts;
 }
 
