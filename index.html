@@ -477,7 +477,30 @@ function faceLabels(sides, isPercentileUnit) {
    polygon shape (triangle / square / kite / pentagon), so the silhouette
    can never be wrong — it's quite literally the math, not an approximation.
    ========================================================================= */
-const DIE_SCALE = 50; // maps unit-sphere geometry to on-screen pixels
+// Base scale maps unit-circumsphere geometry to on-screen pixels. Because
+// every die's vertices sit on a unit sphere but the *faces* vary enormously
+// in how far they sit from the centre (d20 faces are tiny triangles; d6
+// faces are large squares), a single flat scale makes d20 numerals tiny and
+// d4 numerals huge. DIE_TYPE_SCALE corrects for this by multiplying the base
+// scale by (reference_face_inradius / this_die_face_inradius), so every die
+// type's face appears a consistent size on screen. d6 is the reference (factor 1).
+// The d4 drawScale override below is therefore no longer needed.
+// DIE_SCALE is reduced from the original 50 to 42 so that every die type can receive
+// a modest upward correction (via DIE_TYPE_SCALE) without exceeding the original
+// maximum drawn radius of 50px (= the old d6 at scale 1.0). The cap ensures no die
+// spills outside its grid cell or overlaps its neighbours.
+const DIE_SCALE = 42; // base: maps unit-circumsphere geometry to on-screen pixels
+const DIE_TYPE_SCALE = {
+  2: 0.59,   // coin: large disc face — keep it noticeably smaller so it reads as coin-like
+  4: 1.19,
+  6: 1.00,   // reference — radius 42px, slightly smaller than old 50px
+  8: 1.19,
+  10: 1.19,
+  12: 1.18,  // slightly less boost needed (larger faces than d8/d10)
+  20: 1.19,  // capped; d20 faces are small triangles, so face text will be tighter
+  100: 1.19,
+};
+function dieTypeScale(sides) { return DIE_TYPE_SCALE[sides] || 1; }
 
 // For D4: each face's 3 vertices each display the label of the face
 // OPPOSITE to that vertex (the one face not containing that vertex).
@@ -508,17 +531,52 @@ function buildDieModel(sides, isPercentileUnit) {
   const faces = geom.faces.map((face, idx) => {
     const r = face.rotation; // r[row][col]: col0=u, col1=up(v), col2=normal
     const u = [r[0][0], r[1][0], r[2][0]];
-    const up = [r[0][1], r[1][1], r[2][1]];
+    const rawUp = [r[0][1], r[1][1], r[2][1]];
     const normal = face.normal;
     const centroid = face.centroid;
 
     // Reconstruct each vertex's true 3D position from the face's own 2D
     // outline (already verified planar/equal-area) via centroid + lx*u + ly*v.
     const verts3d = face.local2d.map(([lx, ly]) => [
-      centroid[0] + lx * u[0] + ly * up[0],
-      centroid[1] + lx * u[1] + ly * up[1],
-      centroid[2] + lx * u[2] + ly * up[2],
+      centroid[0] + lx * u[0] + ly * rawUp[0],
+      centroid[1] + lx * u[1] + ly * rawUp[1],
+      centroid[2] + lx * u[2] + ly * rawUp[2],
     ]);
+
+    // Snap the face's 'up' vector to the nearest edge-perpendicular direction.
+    // The geometry stores col1 of the face rotation as 'up', but for non-square
+    // faces (triangles, pentagons, kite-quads) this in-plane vector isn't always
+    // exactly perpendicular to a face edge. When the numeral is rendered it is
+    // rotated to align 'up' with screen-up; a slightly off-edge 'up' means the
+    // numeral rotates to a slightly off-edge angle and appears skewed relative to
+    // the face edges during both the tumble and the settled view.
+    // Fix: for each edge in local2d, compute the two edge-perpendicular directions
+    // (in 3D, via the face's u/rawUp basis), pick whichever one is closest to
+    // rawUp, and use that as the corrected 'up'. Coins (d2) are circular and have
+    // no meaningful edges to snap to, so they keep rawUp unchanged.
+    let up = rawUp;
+    if (sides !== 2 && face.local2d.length >= 3) {
+      let bestDot = -2, bestUp = rawUp;
+      const nv = face.local2d.length;
+      for (let i = 0; i < nv; i++) {
+        const [ax, ay] = face.local2d[i];
+        const [bx, by] = face.local2d[(i + 1) % nv];
+        const elx = bx - ax, ely = by - ay;
+        const el = Math.hypot(elx, ely) || 1;
+        // Two perpendicular-to-edge unit directions in local2d space (+90° and -90°)
+        // converted to 3D via the face's own basis vectors.
+        for (const [px, py] of [[-ely / el, elx / el], [ely / el, -elx / el]]) {
+          const p3 = [
+            px * u[0] + py * rawUp[0],
+            px * u[1] + py * rawUp[1],
+            px * u[2] + py * rawUp[2],
+          ];
+          const d = p3[0] * rawUp[0] + p3[1] * rawUp[1] + p3[2] * rawUp[2];
+          if (d > bestDot) { bestDot = d; bestUp = p3; }
+        }
+      }
+      up = bestUp;
+    }
 
     return {
       // Every other die has exactly as many faces as it has sides, so
@@ -919,7 +977,7 @@ function layoutDiceGrid() {
     } else {
       die.screenX = slotX;
       die.screenY = slotY;
-      die.drawScale = die.sides === 4 ? 1.25 : 1;
+      die.drawScale = 1;
     }
   });
 
@@ -1075,7 +1133,7 @@ const visibleFacesScratch = Array.from({ length: 20 }, () => ({ face: null, rotC
 
 function drawDie(ctx, die) {
   const rotMat = quatToMatrix(die.currentQuat);
-  const scale = DIE_SCALE * (die.drawScale || 1);
+  const scale = DIE_SCALE * dieTypeScale(die.sides) * (die.drawScale || 1);
   const cx = die.screenX, cy = die.screenY;
   // Used by the advantage/disadvantage collapse animation to fade a
   // discarded die out in place. Defaults to fully opaque for every other
@@ -1235,13 +1293,42 @@ function drawFaceNumeral(ctx, die, face, rotCentroid, rotUp, rotVerts, cx, cy, s
 
   const [centerX, centerY] = projectPoint(rotCentroid, cx, cy, scale);
 
-  // Numerals are sized per-face, every frame, to the face's actual on-screen
-  // shape — not a fixed constant. A d20's small triangles and a d6's larger
-  // squares (and the same face foreshortened by perspective at an angle)
-  // all render at very different projected sizes, so a single fixed font
-  // size will fit some and overflow others. Sizing from the true projected
-  // inradius keeps the numeral inside its face's edges in every case.
-  const inradius = polygonInradiusFromPoint(centerX, centerY, projected);
+  // Compute the numeral's rotation angle from the *projected* positions of two
+  // 3D points: the face centroid and a point offset along face.up. Projecting
+  // both and taking the 2D angle between them gives the true apparent direction
+  // of 'up' under perspective — identical to how the face polygon itself is
+  // projected. Using just the 3D rotUp vector (without projecting a second point)
+  // produces a flat XY angle that diverges from the face's apparent orientation
+  // as it tilts away from the camera, causing the number to spin relative to
+  // the face polygon during rolling.
+  const upTip3d = [
+    rotCentroid[0] + rotUp[0] * 0.3,
+    rotCentroid[1] + rotUp[1] * 0.3,
+    rotCentroid[2] + rotUp[2] * 0.3,
+  ];
+  const [tipX, tipY] = projectPoint(upTip3d, cx, cy, scale);
+  const angle = Math.atan2(tipY - centerY, tipX - centerX) + Math.PI / 2;
+
+  // Font size from the projected inradius, but softened so the number doesn't
+  // shrink faster than the visible face. The projected inradius collapses to
+  // near-zero as a face becomes edge-on (the nearest edge rushes toward the
+  // centroid), even though the face polygon is still visibly wide. Clamping
+  // the inradius to no less than sqrt(projected_area)/π approximates the
+  // "radius of equivalent circle" and keeps the number a legible size across
+  // the full range of foreshortening angles.
+  const rawInradius = polygonInradiusFromPoint(centerX, centerY, projected);
+
+  // Shoelace area of the projected polygon.
+  let area = 0;
+  const np = projected.length;
+  for (let i = 0; i < np; i++) {
+    const [ax, ay] = projected[i], [bx, by] = projected[(i + 1) % np];
+    area += ax * by - bx * ay;
+  }
+  const projectedArea = Math.abs(area) * 0.5;
+  const areaRadius = Math.sqrt(projectedArea / Math.PI);
+  const inradius = Math.max(rawInradius, areaRadius * 0.45);
+
   const fontSize = inradius * 1.25;
 
   // Numerals use the same ink colour on every face at all times — no grey
@@ -1253,9 +1340,7 @@ function drawFaceNumeral(ctx, die, face, rotCentroid, rotUp, rotVerts, cx, cy, s
   const fadeT = inradius <= FADE_LOW ? 0 : inradius >= FADE_HIGH ? 1 : (inradius - FADE_LOW) / (FADE_HIGH - FADE_LOW);
   const opacity = (MIN_OPACITY + fadeT * (1 - MIN_OPACITY)) * dieOpacity;
   if (opacity <= 0.01) return;
-
   ctx.font = `700 ${fontSize}px 'Fraunces', serif`;
-  const angle = numeralRotationRad(rotUp);
   ctx.save();
   // Clip to the face polygon first so numerals on foreshortened or edge-on
   // faces can never bleed outside their own face boundary.
