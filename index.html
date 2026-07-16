@@ -189,7 +189,7 @@ SOFTWARE.
     display: block;
     width: 100%;
     touch-action: pan-y;
-    cursor: pointer;
+    cursor: default;
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -897,10 +897,13 @@ function layoutDiceGrid() {
   const field = document.getElementById('dice-field');
   const canvas = document.getElementById('dice-canvas');
   const fieldWidth = field.clientWidth || 600;
-  const cellSpan = DIE_PIXEL_SIZE + DIE_GAP;
+  const baseCellSpan = DIE_PIXEL_SIZE + DIE_GAP;
   const slots = diceSlots();
-  const cols = gridColsForWidth(fieldWidth, cellSpan);
+  const cols = gridColsForWidth(fieldWidth, baseCellSpan);
   const rows = Math.max(1, Math.ceil(slots.length / cols));
+  // Stretch cells to fill the full width evenly so there's never a leftover
+  // gap on the right when the tray isn't an exact multiple of cellSpan wide.
+  const cellSpan = fieldWidth / cols;
 
   slots.forEach((die, i) => {
     const { x: slotX, y: slotY } = cellCenter(i, cols, cellSpan);
@@ -954,17 +957,20 @@ function layoutDoubledGrid(groups) {
   const field = document.getElementById('dice-field');
   const canvas = document.getElementById('dice-canvas');
   const fieldWidth = field.clientWidth || 600;
-  const cellSpan = DIE_PIXEL_SIZE + DIE_GAP;
-  const cols = gridColsForWidth(fieldWidth, cellSpan);
+  const baseCellSpan = DIE_PIXEL_SIZE + DIE_GAP;
+  const cols = gridColsForWidth(fieldWidth, baseCellSpan);
   const doubledCellCount = groups.length * 2;
   const rows = Math.max(1, Math.ceil(doubledCellCount / cols));
+  // Stretch to fill width evenly, matching layoutDiceGrid's approach.
+  const cellSpan = fieldWidth / cols;
 
   // Final (collapsed) positions use the ordinary one-cell-per-group grid —
   // exactly what layoutDiceGrid would produce for these groups' originals.
-  const finalCols = gridColsForWidth(fieldWidth, cellSpan);
+  const finalCols = gridColsForWidth(fieldWidth, baseCellSpan);
+  const finalCellSpan = fieldWidth / finalCols;
 
-  function placeDieAt(die, cellIndex, colsForThisGrid) {
-    const { x, y } = cellCenter(cellIndex, colsForThisGrid, cellSpan);
+  function placeDieAt(die, cellIndex, colsForThisGrid, span) {
+    const { x, y } = cellCenter(cellIndex, colsForThisGrid, span);
     return { x, y };
   }
 
@@ -976,9 +982,9 @@ function layoutDoubledGrid(groups) {
     if (group.kind === 'percentile') {
       const { tens: origTens, units: origUnits } = group.original;
       const { tens: dupTens, units: dupUnits } = group.duplicate;
-      const a = placeDieAt(origTens, doubledIndexA, cols);
-      const b = placeDieAt(dupTens, doubledIndexB, cols);
-      const final = placeDieAt(origTens, finalIndex, finalCols);
+      const a = placeDieAt(origTens, doubledIndexA, cols, cellSpan);
+      const b = placeDieAt(dupTens, doubledIndexB, cols, cellSpan);
+      const final = placeDieAt(origTens, finalIndex, finalCols, finalCellSpan);
 
       origTens.screenX = a.x - PERCENTILE_SUB_OFFSET; origTens.screenY = a.y; origTens.drawScale = PERCENTILE_SUB_SCALE;
       origUnits.screenX = a.x + PERCENTILE_SUB_OFFSET; origUnits.screenY = a.y; origUnits.drawScale = PERCENTILE_SUB_SCALE;
@@ -992,9 +998,9 @@ function layoutDoubledGrid(groups) {
       [origUnits, dupUnits].forEach((d) => { d._collapseFinalX = final.x + PERCENTILE_SUB_OFFSET; d._collapseFinalY = final.y; d._collapseFinalScale = PERCENTILE_SUB_SCALE; });
     } else {
       const { original, duplicate } = group;
-      const a = placeDieAt(original, doubledIndexA, cols);
-      const b = placeDieAt(duplicate, doubledIndexB, cols);
-      const final = placeDieAt(original, finalIndex, finalCols);
+      const a = placeDieAt(original, doubledIndexA, cols, cellSpan);
+      const b = placeDieAt(duplicate, doubledIndexB, cols, cellSpan);
+      const final = placeDieAt(original, finalIndex, finalCols, finalCellSpan);
 
       original.screenX = a.x; original.screenY = a.y; original.drawScale = ADV_PAIR_SCALE;
       duplicate.screenX = b.x; duplicate.screenY = b.y; duplicate.drawScale = ADV_PAIR_SCALE;
@@ -1289,11 +1295,12 @@ function drawD4FaceNumerals(ctx, die, face, rotVerts, cx, cy, scale, dieOpacity)
   const opacity = (MIN_OPACITY + fadeT * (1 - MIN_OPACITY)) * dieOpacity;
   if (opacity <= 0.01) return;
 
-  // Font: base size off the die's 3D scale so it stays legible on foreshortened
-  // settled faces (where projected inradius shrinks but the die itself is full size).
-  // Clamp to inradius * 1.4 so text never overflows a very edge-on face.
-  const baseSize = scale * 0.5;
-  const fontSize = Math.min(baseSize, Math.max(6, inradius * 1.45));
+  // Size purely from projected inradius — same approach as every other die type.
+  // Using a separate scale-based floor caused the font size to jump abruptly the
+  // moment the die settled (the two size signals switched dominance), which read
+  // as an uncanny pop. A consistent inradius curve means the size changes smoothly
+  // throughout the tumble and lands naturally on the settled value.
+  const fontSize = Math.max(6, Math.min(22, inradius * 1.45));
   ctx.font = `700 ${fontSize}px 'JetBrains Mono', monospace`;
   ctx.globalAlpha = opacity;
   ctx.fillStyle = fillColor;
@@ -2099,6 +2106,23 @@ window.addEventListener('resize', () => {
    ========================================================================= */
 const DIE_HIT_RADIUS = 52; // generous for touch; a bit larger than the die's drawn radius (DIE_SCALE)
 const DIE_HIT_RADIUS_PERCENTILE = 34; // smaller/closer-together sub-dice in a percentile pair
+
+document.getElementById('dice-canvas').addEventListener('mousemove', (e) => {
+  if (rolling) { e.currentTarget.style.cursor = 'default'; return; }
+  const rect = e.currentTarget.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  const overDie = dice.some((die) => {
+    const radius = die.pairId !== undefined ? DIE_HIT_RADIUS_PERCENTILE : DIE_HIT_RADIUS;
+    const dx = die.screenX - x, dy = die.screenY - y;
+    return dx * dx + dy * dy <= radius * radius;
+  });
+  e.currentTarget.style.cursor = overDie ? 'pointer' : 'default';
+});
+
+document.getElementById('dice-canvas').addEventListener('mouseleave', (e) => {
+  e.currentTarget.style.cursor = 'default';
+});
 
 document.getElementById('dice-canvas').addEventListener('click', (e) => {
   if (rolling) return; // ignore taps while anything is already mid-roll
