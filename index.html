@@ -91,22 +91,22 @@ SOFTWARE.
 
   .picker-btn {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 500;
     background: rgba(244,234,210,0.06);
     border: 1px solid rgba(244,234,210,0.22);
     color: var(--chalk);
-    padding: 8px 14px 8px 10px;
+    padding: 11px 18px 11px 13px;
     border-radius: 6px;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
-    gap: 7px;
+    gap: 9px;
     transition: background 0.15s, border-color 0.15s, transform 0.1s;
   }
   .picker-icon {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     flex: none;
     overflow: visible;
   }
@@ -203,7 +203,7 @@ SOFTWARE.
   }
   .group-chip {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
+    font-size: 15px;
     color: var(--chalk-dim);
     background: rgba(244,234,210,0.06);
     border: 1px solid rgba(244,234,210,0.16);
@@ -215,13 +215,13 @@ SOFTWARE.
   }
   .group-chip .tag { color: var(--brass); font-weight: 700; }
   .group-chip button {
-    width: 18px; height: 18px;
-    border-radius: 4px;
+    width: 26px; height: 26px;
+    border-radius: 5px;
     border: 1px solid rgba(244,234,210,0.25);
     background: rgba(244,234,210,0.05);
     color: var(--chalk);
     font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
+    font-size: 16px;
     line-height: 1;
     cursor: pointer;
     display: flex; align-items: center; justify-content: center;
@@ -313,14 +313,14 @@ SOFTWARE.
   }
   .modifier-sign-btn {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
+    font-size: 15px;
     font-weight: 600;
     line-height: 1;
     background: rgba(244,234,210,0.08);
     border: 1px solid rgba(244,234,210,0.28);
     color: var(--chalk-dim);
     border-radius: 6px;
-    padding: 5px 7px;
+    padding: 8px 11px;
     cursor: pointer;
     transition: background 0.15s, border-color 0.15s, color 0.15s;
   }
@@ -360,7 +360,7 @@ SOFTWARE.
     font-family: 'Fraunces', serif;
     font-weight: 700;
     font-size: 44px;
-    color: var(--chalk);
+    color: var(--brass);
     line-height: 1;
     display: block;
   }
@@ -477,7 +477,7 @@ function faceLabels(sides, isPercentileUnit) {
    polygon shape (triangle / square / kite / pentagon), so the silhouette
    can never be wrong — it's quite literally the math, not an approximation.
    ========================================================================= */
-const DIE_SCALE = 42; // maps unit-sphere geometry to on-screen pixels
+const DIE_SCALE = 50; // maps unit-sphere geometry to on-screen pixels
 
 // For D4: each face's 3 vertices each display the label of the face
 // OPPOSITE to that vertex (the one face not containing that vertex).
@@ -873,8 +873,8 @@ function diceSlots() {
   return slots;
 }
 
-const PERCENTILE_SUB_SCALE = 0.62; // each die in a percentile pair, relative to a normal die
-const PERCENTILE_SUB_OFFSET = 27; // horizontal offset of each sub-die from the slot center
+const PERCENTILE_SUB_SCALE = 0.53; // each die in a percentile pair, relative to a normal die
+const PERCENTILE_SUB_OFFSET = 26; // horizontal offset of each sub-die from the slot center
 
 // Shared by the normal grid and the advantage/disadvantage doubled grid:
 // given a flat cell index and how many columns fit per row, returns that
@@ -1061,6 +1061,8 @@ function renderDiceCanvas() {
   dice.forEach((die) => {
     drawDie(ctx, die);
   });
+
+  ctx.textBaseline = 'middle';
 }
 
 // Shared scratch array for the "visible faces" list built during drawDie.
@@ -1240,7 +1242,7 @@ function drawFaceNumeral(ctx, die, face, rotCentroid, rotUp, rotVerts, cx, cy, s
   // size will fit some and overflow others. Sizing from the true projected
   // inradius keeps the numeral inside its face's edges in every case.
   const inradius = polygonInradiusFromPoint(centerX, centerY, projected);
-  const fontSize = Math.max(8, Math.min(26, inradius * 1.25));
+  const fontSize = inradius * 1.25;
 
   // Numerals use the same ink colour on every face at all times — no grey
   // "muted" variant for non-result faces after settling. Opacity still fades
@@ -1252,7 +1254,7 @@ function drawFaceNumeral(ctx, die, face, rotCentroid, rotUp, rotVerts, cx, cy, s
   const opacity = (MIN_OPACITY + fadeT * (1 - MIN_OPACITY)) * dieOpacity;
   if (opacity <= 0.01) return;
 
-  ctx.font = `700 ${fontSize}px 'JetBrains Mono', monospace`;
+  ctx.font = `700 ${fontSize}px 'Fraunces', serif`;
   const angle = numeralRotationRad(rotUp);
   ctx.save();
   // Clip to the face polygon first so numerals on foreshortened or edge-on
@@ -1301,7 +1303,7 @@ function drawD4FaceNumerals(ctx, die, face, rotVerts, cx, cy, scale, dieOpacity)
   // as an uncanny pop. A consistent inradius curve means the size changes smoothly
   // throughout the tumble and lands naturally on the settled value.
   const fontSize = Math.max(6, Math.min(22, inradius * 1.45));
-  ctx.font = `700 ${fontSize}px 'JetBrains Mono', monospace`;
+  ctx.font = `700 ${fontSize}px 'Fraunces', serif`;
   ctx.globalAlpha = opacity;
   ctx.fillStyle = fillColor;
 
@@ -1671,9 +1673,9 @@ function animateTumbleAndSettle(diceToRoll, onAllSettled) {
     const waypoints = buildTumbleWaypoints(d.currentQuat, d.sides, (fromQuat) =>
       solveSettleFromQuat(fromQuat, face.normal, face.up, isD4)
     );
-    // Each die gets its own random duration (2–3 s) so dice don't all land
+    // Each die gets its own random duration (2–3.5 s) so dice don't all land
     // in unison — staggered landings make a tray feel more physical.
-    const rollDurationMs = rollFloat(2000, 3000);
+    const rollDurationMs = rollFloat(2000, 3500);
     return buildRollAnimState(d, waypoints, rollDurationMs);
   });
 
