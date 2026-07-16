@@ -1309,27 +1309,35 @@ function drawFaceNumeral(ctx, die, face, rotCentroid, rotUp, rotVerts, cx, cy, s
   const [tipX, tipY] = projectPoint(upTip3d, cx, cy, scale);
   const angle = Math.atan2(tipY - centerY, tipX - centerX) + Math.PI / 2;
 
-  // Font size from the projected inradius, but softened so the number doesn't
-  // shrink faster than the visible face. The projected inradius collapses to
-  // near-zero as a face becomes edge-on (the nearest edge rushes toward the
-  // centroid), even though the face polygon is still visibly wide. Clamping
-  // the inradius to no less than sqrt(projected_area)/π approximates the
-  // "radius of equivalent circle" and keeps the number a legible size across
-  // the full range of foreshortening angles.
-  const rawInradius = polygonInradiusFromPoint(centerX, centerY, projected);
-
-  // Shoelace area of the projected polygon.
-  let area = 0;
+  // Font size from the geometric mean of two metrics:
+  // - the projected polygon's inradius (from its 2D centroid): collapses too fast
+  //   on its own (shrinks to near-zero while the face is still clearly visible)
+  // - the projected span along the numeral's up direction: stays nearly constant
+  //   on its own (barely shrinks even when the face is nearly edge-on, causing
+  //   overflow as seen in testing)
+  // Their geometric mean gives a sensible middle ground: ~71% at 60°, ~59% at 70°,
+  // matching how real dice numerals appear foreshortened without disappearing.
   const np = projected.length;
+  let px2d = 0, py2d = 0;
+  for (const [vx, vy] of projected) { px2d += vx; py2d += vy; }
+  px2d /= np; py2d /= np;
+  let rawInradius = Infinity;
   for (let i = 0; i < np; i++) {
     const [ax, ay] = projected[i], [bx, by] = projected[(i + 1) % np];
-    area += ax * by - bx * ay;
+    const abx = bx-ax, aby = by-ay, apx = px2d-ax, apy = py2d-ay;
+    const l2 = abx*abx + aby*aby;
+    const t = l2 > 0 ? Math.max(0, Math.min(1, (apx*abx + apy*aby) / l2)) : 0;
+    rawInradius = Math.min(rawInradius, Math.hypot(px2d-ax-t*abx, py2d-ay-t*aby));
   }
-  const projectedArea = Math.abs(area) * 0.5;
-  const areaRadius = Math.sqrt(projectedArea / Math.PI);
-  const inradius = Math.max(rawInradius, areaRadius * 0.45);
-
-  const fontSize = inradius * 1.25;
+  const upDirLen = Math.hypot(tipX - centerX, tipY - centerY) || 1;
+  const upDirX = (tipX - centerX) / upDirLen;
+  const upDirY = (tipY - centerY) / upDirLen;
+  const spanDots = projected.map(([vx, vy]) =>
+    (vx - centerX) * upDirX + (vy - centerY) * upDirY
+  );
+  const upSpan = Math.max(...spanDots) - Math.min(...spanDots);
+  const inradius = Math.sqrt(rawInradius * upSpan) * 0.67;
+  const fontSize = inradius;
 
   // Numerals use the same ink colour on every face at all times — no grey
   // "muted" variant for non-result faces after settling. Opacity still fades
