@@ -477,7 +477,28 @@ function faceLabels(sides, isPercentileUnit) {
    polygon shape (triangle / square / kite / pentagon), so the silhouette
    can never be wrong — it's quite literally the math, not an approximation.
    ========================================================================= */
-const DIE_SCALE = 30; // maps unit-sphere geometry to on-screen pixels
+const DIE_SCALE = 42; // maps unit-sphere geometry to on-screen pixels
+
+// For D4: each face's 3 vertices each display the label of the face
+// OPPOSITE to that vertex (the one face not containing that vertex).
+// vertexIndices[i] → label of the face whose vertexIndices do not include that vertex.
+// Pre-computed here so drawing code can index directly.
+// d4VertexLabels[faceIdx][localVertexIdx] = label string to draw near that vertex.
+const D4_VERTEX_LABELS = (function() {
+  const d4Faces = DICE_GEOMETRY['4'].faces;
+  const d4Labels = ['1','2','3','4'];
+  const allVerts = [0,1,2,3];
+  // For each vertex index (0..3), find the face that does NOT contain it
+  const vertOppLabel = {};
+  allVerts.forEach(v => {
+    const oppIdx = d4Faces.findIndex(f => !f.vertexIndices.includes(v));
+    vertOppLabel[v] = d4Labels[oppIdx];
+  });
+  // For each face, produce [label at local2d[0], label at local2d[1], label at local2d[2]]
+  return d4Faces.map(face =>
+    face.vertexIndices.map(v => vertOppLabel[v])
+  );
+})();
 
 function buildDieModel(sides, isPercentileUnit) {
   const geomKey = String(sides);
@@ -510,6 +531,9 @@ function buildDieModel(sides, isPercentileUnit) {
       // label at all, so it's never selected as a roll result and never
       // shows stray text on the coin's edge.
       label: sides === 2 ? (idx < 2 ? labels[idx] : '') : labels[idx % labels.length],
+      // For D4: the three vertex labels (one per local2d vertex) to draw near each vertex.
+      // Each shows the label of the face opposite that vertex. Null for all other die types.
+      d4VertexLabels: sides === 4 ? D4_VERTEX_LABELS[idx] : null,
       normal,
       up,
       centroid,
@@ -758,7 +782,7 @@ function totalCount() {
   return order.length;
 }
 
-const DIE_PIXEL_SIZE = 64; // on-screen footprint of one die, before devicePixelRatio scaling
+const DIE_PIXEL_SIZE = 90; // on-screen footprint of one die, before devicePixelRatio scaling
 const DIE_GAP = 22;
 
 // A standalone die model with a small randomized rest tilt, so dice freshly
@@ -850,7 +874,7 @@ function diceSlots() {
 }
 
 const PERCENTILE_SUB_SCALE = 0.62; // each die in a percentile pair, relative to a normal die
-const PERCENTILE_SUB_OFFSET = 19; // horizontal offset of each sub-die from the slot center
+const PERCENTILE_SUB_OFFSET = 27; // horizontal offset of each sub-die from the slot center
 
 // Shared by the normal grid and the advantage/disadvantage doubled grid:
 // given a flat cell index and how many columns fit per row, returns that
@@ -892,7 +916,7 @@ function layoutDiceGrid() {
     } else {
       die.screenX = slotX;
       die.screenY = slotY;
-      die.drawScale = 1;
+      die.drawScale = die.sides === 4 ? 1.25 : 1;
     }
   });
 
@@ -1192,6 +1216,15 @@ function drawFaceStroke(ctx, die, face, rotVerts, cx, cy, scale, dieOpacity) {
 function drawFaceNumeral(ctx, die, face, rotCentroid, rotUp, rotVerts, cx, cy, scale, dieOpacity) {
   const projected = face._projVerts; // already populated by drawFaceFill this frame
   const isDark = die.colorScheme === 'dark';
+
+  // D4 gets a completely different treatment: three small numbers, one near
+  // each vertex, each showing the label of the face opposite that vertex.
+  // This matches real D4 dice which rest on a face and are read at the apex.
+  if (die.sides === 4 && face.d4VertexLabels) {
+    drawD4FaceNumerals(ctx, die, face, rotVerts, cx, cy, scale, dieOpacity);
+    return;
+  }
+
   const [centerX, centerY] = projectPoint(rotCentroid, cx, cy, scale);
 
   // Numerals are sized per-face, every frame, to the face's actual on-screen
@@ -1201,8 +1234,7 @@ function drawFaceNumeral(ctx, die, face, rotCentroid, rotUp, rotVerts, cx, cy, s
   // size will fit some and overflow others. Sizing from the true projected
   // inradius keeps the numeral inside its face's edges in every case.
   const inradius = polygonInradiusFromPoint(centerX, centerY, projected);
-  const fontSize = Math.max(6, Math.min(17, inradius * 1.35));
-
+  const fontSize = Math.max(8, Math.min(26, inradius * 1.25));
 
   // Numerals use the same ink colour on every face at all times — no grey
   // "muted" variant for non-result faces after settling. Opacity still fades
@@ -1233,6 +1265,80 @@ function drawFaceNumeral(ctx, die, face, rotCentroid, rotUp, rotVerts, cx, cy, s
   ctx.fillText(face.label, 0, 1);
   ctx.globalAlpha = 1;
   ctx.restore();
+}
+
+// Draw three numbers on a D4 face — one near each vertex.
+// Each number is the label of the face opposite that vertex, rotated to
+// point toward the vertex (away from the face centroid), and sized to fit
+// comfortably inside the triangle without overlapping each other or the edges.
+function drawD4FaceNumerals(ctx, die, face, rotVerts, cx, cy, scale, dieOpacity) {
+  const projected = face._projVerts; // already computed by drawFaceFill
+  const isDark = die.colorScheme === 'dark';
+  const fillColor = isDark ? '#f4ead2' : '#0f2a20';
+
+  // Compute projected centroid from the 3 projected vertices
+  const projCx = (projected[0][0] + projected[1][0] + projected[2][0]) / 3;
+  const projCy = (projected[0][1] + projected[1][1] + projected[2][1]) / 3;
+
+  // Inradius from centroid — used for fade and as a cap to prevent overflow on tiny faces.
+  const inradius = polygonInradiusFromPoint(projCx, projCy, projected);
+
+  // D4 faces are always foreshortened when settled so use a lower fade floor.
+  const FADE_LOW = 1.5, FADE_HIGH = 4, MIN_OPACITY = 0.9;
+  const fadeT = inradius <= FADE_LOW ? 0 : inradius >= FADE_HIGH ? 1 : (inradius - FADE_LOW) / (FADE_HIGH - FADE_LOW);
+  const opacity = (MIN_OPACITY + fadeT * (1 - MIN_OPACITY)) * dieOpacity;
+  if (opacity <= 0.01) return;
+
+  // Font: base size off the die's 3D scale so it stays legible on foreshortened
+  // settled faces (where projected inradius shrinks but the die itself is full size).
+  // Clamp to inradius * 1.4 so text never overflows a very edge-on face.
+  const baseSize = scale * 0.5;
+  const fontSize = Math.min(baseSize, Math.max(6, inradius * 1.45));
+  ctx.font = `700 ${fontSize}px 'JetBrains Mono', monospace`;
+  ctx.globalAlpha = opacity;
+  ctx.fillStyle = fillColor;
+
+  ctx.save();
+  // Clip to the face triangle so numbers never bleed outside the face edge.
+  ctx.beginPath();
+  ctx.moveTo(projected[0][0], projected[0][1]);
+  ctx.lineTo(projected[1][0], projected[1][1]);
+  ctx.lineTo(projected[2][0], projected[2][1]);
+  ctx.closePath();
+  ctx.clip();
+
+  // For each of the 3 vertices, place the label at a point between the
+  // vertex and the centroid, rotated so the number reads toward the vertex.
+  for (let i = 0; i < 3; i++) {
+    const label = face.d4VertexLabels[i];
+    if (!label) continue;
+
+    const [vx, vy] = projected[i];
+
+    // Vector from centroid to vertex
+    const dvx = vx - projCx;
+    const dvy = vy - projCy;
+    const dist = Math.hypot(dvx, dvy) || 1;
+
+    // Place the number 48% of the way from centroid to vertex,
+    // so it sits in the vertex region with clear space from the edges.
+    const t = 0.48;
+    const tx = projCx + dvx * t;
+    const ty = projCy + dvy * t;
+
+    // Rotate the numeral so it points toward its vertex (away from centroid).
+    // The "up" direction for the text is the centroid→vertex direction.
+    const angle = Math.atan2(dvy, dvx) - Math.PI / 2; // text baseline perpendicular to radial
+
+    ctx.save();
+    ctx.translate(tx, ty);
+    ctx.rotate(angle);
+    ctx.fillText(label, 0, 0);
+    ctx.restore();
+  }
+
+  ctx.restore();
+  ctx.globalAlpha = 1;
 }
 
 function updateCountLabel() {
@@ -1392,9 +1498,12 @@ function buildTumbleWaypoints(startQuat, sides, finalSolver) {
   return quats;
 }
 
-function solveSettleFromQuat(currentQuat, faceNormal, faceUp) {
+function solveSettleFromQuat(currentQuat, faceNormal, faceUp, faceDown) {
+  // faceDown: if true, settle so faceNormal points AWAY from viewer (toward table).
+  // Used for D4, which rests on a face — result is read at the top vertex, not the
+  // face pointing toward the viewer.
   const currentMat = quatToMatrix(currentQuat);
-  const target = [0, 0, 1];
+  const target = faceDown ? [0, 0, -1] : [0, 0, 1];
   const targetUp = [0, 1, 0];
 
   const curNormal = applyMatrixToVector(currentMat, faceNormal);
@@ -1404,11 +1513,13 @@ function solveSettleFromQuat(currentQuat, faceNormal, faceUp) {
   const settleQuat = matrixToQuaternion(settleMat);
   const settledUp = applyMatrixToVector(settleMat, curUp);
 
-  const dotST = settledUp[0]*target[0] + settledUp[1]*target[1] + settledUp[2]*target[2];
-  const proj = settledUp.map((v, idx) => v - dotST * target[idx]);
+  // For the twist step, align "up" with screen up around the settle axis.
+  const axisRef = faceDown ? [0, 0, -1] : [0, 0, 1];
+  const dotST = settledUp[0]*axisRef[0] + settledUp[1]*axisRef[1] + settledUp[2]*axisRef[2];
+  const proj = settledUp.map((v, idx) => v - dotST * axisRef[idx]);
   const projLen = Math.hypot(...proj) || 1;
   const projN = proj.map((v) => v / projLen);
-  const twistMat = rotationAroundAxis(target, projN, targetUp);
+  const twistMat = rotationAroundAxis(axisRef, projN, targetUp);
   const twistQuat = matrixToQuaternion(twistMat);
 
   return quatMultiply(twistQuat, quatMultiply(settleQuat, currentQuat));
@@ -1549,8 +1660,9 @@ function animateTumbleAndSettle(diceToRoll, onAllSettled) {
 
   const animStates = diceToRoll.map((d, i) => {
     const face = d.faceByLabel[results[i].label];
+    const isD4 = d.sides === 4;
     const waypoints = buildTumbleWaypoints(d.currentQuat, d.sides, (fromQuat) =>
-      solveSettleFromQuat(fromQuat, face.normal, face.up)
+      solveSettleFromQuat(fromQuat, face.normal, face.up, isD4)
     );
     // Each die gets its own random duration (2–3 s) so dice don't all land
     // in unison — staggered landings make a tray feel more physical.
@@ -1985,8 +2097,8 @@ window.addEventListener('resize', () => {
    handling needed, and — per the touch-action note on #dice-canvas above —
    doesn't interfere with vertical scroll-by-touch over the dice area.
    ========================================================================= */
-const DIE_HIT_RADIUS = 38; // generous for touch; a bit larger than the die's drawn radius (DIE_SCALE)
-const DIE_HIT_RADIUS_PERCENTILE = 24; // smaller/closer-together sub-dice in a percentile pair
+const DIE_HIT_RADIUS = 52; // generous for touch; a bit larger than the die's drawn radius (DIE_SCALE)
+const DIE_HIT_RADIUS_PERCENTILE = 34; // smaller/closer-together sub-dice in a percentile pair
 
 document.getElementById('dice-canvas').addEventListener('click', (e) => {
   if (rolling) return; // ignore taps while anything is already mid-roll
