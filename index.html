@@ -852,8 +852,8 @@ const DIE_GAP = 22;
 // never added to `order`).
 function buildFreshDie(sides, isPercentileUnit) {
   const die = buildDieModel(sides, isPercentileUnit);
-  const restX = rollFloat(-12, 12);
-  const restY = rollFloat(-12, 12);
+  const restX = rollFloat(-120, 120);
+  const restY = rollFloat(-120, 120);
   const qx = quatFromAxisAngle([1, 0, 0], restX);
   const qy = quatFromAxisAngle([0, 1, 0], restY);
   die.currentQuat = quatMultiply(qy, qx);
@@ -1631,12 +1631,10 @@ function refreshAdvantageButtons() {
    transition target, which can't represent "how many times it spun."
    ========================================================================= */
 function buildTumbleWaypoints(startQuat, sides, finalSolver) {
-  // The coin (d2) keeps a busier 15-waypoint tumble — it's a thin disc, so
+  // The coin (d2) keeps a busier  tumble — it's a thin disc, so
   // it needs more flips to read clearly as "tumbling" rather than just
-  // wobbling once or twice. Every other die uses 6, a calmer roll. To
-  // restore a random range scaled the same way as the old 15, swap a
-  // count below for: Math.floor(rollFloat(9, 18)) or Math.floor(rollFloat(3, 7)).
-  const waypointCount = sides === 2 ? Math.floor(rollFloat(12, 20)) : Math.floor(rollFloat(6, 9));
+  // wobbling once or twice. Every other die uses a calmer roll.
+  const waypointCount = sides === 2 ? 18 : 9;
   const quats = [startQuat];
   let current = startQuat;
 
@@ -1840,9 +1838,9 @@ function animateTumbleAndSettle(diceToRoll, onAllSettled) {
     const waypoints = buildTumbleWaypoints(d.currentQuat, d.sides, (fromQuat) =>
       solveSettleFromQuat(fromQuat, face.normal, face.up, isD4)
     );
-    // Each die gets its own random duration (2–3.5 s) so dice don't all land
+    // Each die gets its own random duration so dice don't all land
     // in unison — staggered landings make a tray feel more physical.
-    const rollDurationMs = rollFloat(2000, 3500);
+    const rollDurationMs = rollFloat(2000, 3000);
     return buildRollAnimState(d, waypoints, rollDurationMs);
   });
 
