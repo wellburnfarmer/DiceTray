@@ -1275,7 +1275,7 @@ function drawFaceStroke(ctx, die, face, rotVerts, cx, cy, scale, dieOpacity) {
   ctx.closePath();
   ctx.globalAlpha = dieOpacity;
   ctx.lineWidth = 1.8; // clipped to the face polygon, so this reads finer than the number suggests
-  ctx.strokeStyle = isDark ? 'rgba(244,234,210,0.55)' : '#0f2a20';
+  ctx.strokeStyle = isDark ? 'rgba(244,234,210,0.55)' : '#000000';
   ctx.stroke();
   ctx.globalAlpha = 1;
   ctx.restore();
@@ -1402,7 +1402,7 @@ function drawFaceNumeral(ctx, die, face, rotCentroid, rotUp, rotVerts, cx, cy, s
   // "muted" variant for non-result faces after settling. Opacity still fades
   // with the face's apparent size so very edge-on faces recede naturally,
   // but the colour itself is always the full-contrast ink.
-  const fillColor = isDark ? '#f4ead2' : '#0f2a20';
+  const fillColor = isDark ? '#f4ead2' : '#000000';
   const FADE_LOW = 2.5, FADE_HIGH = 6, MIN_OPACITY = 0.75;
   const fadeT = inradius <= FADE_LOW ? 0 : inradius >= FADE_HIGH ? 1 : (inradius - FADE_LOW) / (FADE_HIGH - FADE_LOW);
   const opacity = (MIN_OPACITY + fadeT * (1 - MIN_OPACITY)) * dieOpacity;
@@ -1439,7 +1439,7 @@ function drawFaceNumeral(ctx, die, face, rotCentroid, rotUp, rotVerts, cx, cy, s
 function drawD4FaceNumerals(ctx, die, face, rotVerts, cx, cy, scale, dieOpacity) {
   const projected = face._projVerts; // already computed by drawFaceFill
   const isDark = die.colorScheme === 'dark';
-  const fillColor = isDark ? '#f4ead2' : '#0f2a20';
+  const fillColor = isDark ? '#f4ead2' : '#000000';
 
   // Compute projected centroid from the 3 projected vertices
   const projCx = (projected[0][0] + projected[1][0] + projected[2][0]) / 3;
@@ -1466,7 +1466,10 @@ function drawD4FaceNumerals(ctx, die, face, rotVerts, cx, cy, scale, dieOpacity)
   // ~0.471. At z~0, projectPoint factor ~1, so face-on inradius ~0.471*scale.
   // Setting the cap at 0.47*scale means it only binds at extreme tilt angles
   // where the projected inradius would otherwise exceed the face's true size.
-  const fontSize = Math.max(6, Math.min(scale * 0.47, inradius * 1.9));
+  // During tumbling, D4 numerals can look large and cluttered because three numbers
+  // compete for space on a fully face-on triangle. Scale them down by a tumble factor.
+  const tumbleShrink = die.settled ? 1.0 : 0.7;
+  const fontSize = Math.min(scale * 0.47, inradius * 1.9) * tumbleShrink;
   ctx.font = `700 ${fontSize}px 'Almendra', serif`;
   ctx.globalAlpha = opacity;
   ctx.fillStyle = fillColor;
