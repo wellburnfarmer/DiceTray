@@ -1333,10 +1333,23 @@ function drawFaceNumeral(ctx, die, face, rotCentroid, rotUp, rotVerts, cx, cy, s
   const upDirLen = Math.hypot(tipX - centerX, tipY - centerY) || 1;
   const upDirX = (tipX - centerX) / upDirLen;
   const upDirY = (tipY - centerY) / upDirLen;
+  // Cross direction is perpendicular to up in screen space.
+  const crossDirX = -upDirY;
+  const crossDirY = upDirX;
   const spanDots = projected.map(([vx, vy]) =>
     (vx - centerX) * upDirX + (vy - centerY) * upDirY
   );
   const upSpan = Math.max(...spanDots) - Math.min(...spanDots);
+  // Cross-span: extent of the projected face perpendicular to up in screen space.
+  // When the face is tilted sideways this shrinks, giving us the foreshortening ratio.
+  const crossDots = projected.map(([vx, vy]) =>
+    (vx - centerX) * crossDirX + (vy - centerY) * crossDirY
+  );
+  const crossSpan = Math.max(...crossDots) - Math.min(...crossDots);
+  // Squash factor: how compressed the face is along its cross axis vs its up axis.
+  // This is clamped to [0.1, 1] so that very edge-on faces don't invert and
+  // near-face-on dice aren't skewed by floating-point noise.
+  const foreshortening = upSpan > 0.5 ? Math.max(0.1, Math.min(1.0, crossSpan / upSpan)) : 1.0;
   const inradius = Math.sqrt(rawInradius * upSpan) * 0.67;
   const fontSize = inradius;
 
@@ -1362,6 +1375,11 @@ function drawFaceNumeral(ctx, die, face, rotCentroid, rotUp, rotVerts, cx, cy, s
   ctx.clip();
   ctx.translate(centerX, centerY);
   ctx.rotate(angle);
+  // Scale the cross axis (local X after rotation) to match the face's foreshortening.
+  // After rotate(angle), local Y = face up direction, local X = face cross direction.
+  // Squashing X by foreshortening makes the numeral lean with the face rather than
+  // always facing the viewer head-on.
+  ctx.scale(foreshortening, 1);
   ctx.globalAlpha = opacity;
   ctx.fillStyle = fillColor;
   ctx.fillText(face.label, 0, 1);
