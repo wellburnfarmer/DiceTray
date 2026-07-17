@@ -1291,16 +1291,21 @@ function drawFaceNumeral(ctx, die, face, rotCentroid, rotUp, rotVerts, cx, cy, s
     return;
   }
 
-  const [centerX, centerY] = projectPoint(rotCentroid, cx, cy, scale);
+  // Use the average of the projected vertices as the canonical 2D centroid.
+  // This is exactly what the viewer sees as the face's centre, and it stays
+  // consistent whether we use it for placement, sizing, or angle — unlike
+  // projectPoint(rotCentroid), which diverges from the vertex average under
+  // perspective when the face is tilted away from the camera.
+  const np = projected.length;
+  let centerX = 0, centerY = 0;
+  for (const [vx, vy] of projected) { centerX += vx; centerY += vy; }
+  centerX /= np; centerY /= np;
 
-  // Compute the numeral's rotation angle from the *projected* positions of two
-  // 3D points: the face centroid and a point offset along face.up. Projecting
-  // both and taking the 2D angle between them gives the true apparent direction
-  // of 'up' under perspective — identical to how the face polygon itself is
-  // projected. Using just the 3D rotUp vector (without projecting a second point)
-  // produces a flat XY angle that diverges from the face's apparent orientation
-  // as it tilts away from the camera, causing the number to spin relative to
-  // the face polygon during rolling.
+  // Compute the numeral's rotation angle by projecting the face's 'up' vector
+  // as a point slightly offset from the centroid along face.up, then measuring
+  // the 2D angle from the projected centroid to that projected tip.
+  // Both points go through the same projectPoint path as the face vertices, so
+  // the resulting angle is consistent with the face polygon under perspective.
   const upTip3d = [
     rotCentroid[0] + rotUp[0] * 0.3,
     rotCentroid[1] + rotUp[1] * 0.3,
@@ -1317,17 +1322,13 @@ function drawFaceNumeral(ctx, die, face, rotCentroid, rotUp, rotVerts, cx, cy, s
   //   overflow as seen in testing)
   // Their geometric mean gives a sensible middle ground: ~71% at 60°, ~59% at 70°,
   // matching how real dice numerals appear foreshortened without disappearing.
-  const np = projected.length;
-  let px2d = 0, py2d = 0;
-  for (const [vx, vy] of projected) { px2d += vx; py2d += vy; }
-  px2d /= np; py2d /= np;
   let rawInradius = Infinity;
   for (let i = 0; i < np; i++) {
     const [ax, ay] = projected[i], [bx, by] = projected[(i + 1) % np];
-    const abx = bx-ax, aby = by-ay, apx = px2d-ax, apy = py2d-ay;
+    const abx = bx-ax, aby = by-ay, apx = centerX-ax, apy = centerY-ay;
     const l2 = abx*abx + aby*aby;
     const t = l2 > 0 ? Math.max(0, Math.min(1, (apx*abx + apy*aby) / l2)) : 0;
-    rawInradius = Math.min(rawInradius, Math.hypot(px2d-ax-t*abx, py2d-ay-t*aby));
+    rawInradius = Math.min(rawInradius, Math.hypot(centerX-ax-t*abx, centerY-ay-t*aby));
   }
   const upDirLen = Math.hypot(tipX - centerX, tipY - centerY) || 1;
   const upDirX = (tipX - centerX) / upDirLen;
@@ -1395,7 +1396,14 @@ function drawD4FaceNumerals(ctx, die, face, rotVerts, cx, cy, scale, dieOpacity)
   // moment the die settled (the two size signals switched dominance), which read
   // as an uncanny pop. A consistent inradius curve means the size changes smoothly
   // throughout the tumble and lands naturally on the settled value.
-  const fontSize = Math.max(6, Math.min(22, inradius * 1.45));
+  // Cap proportional to scale rather than a fixed pixel value, so the ceiling
+  // rises at the same rate as the face polygon. A fixed cap (e.g. 30px) hits
+  // while the face is still growing and makes the numbers appear to freeze.
+  // D4 local2d circumradius ~0.943; inradius of equilateral triangle = circumradius/2
+  // ~0.471. At z~0, projectPoint factor ~1, so face-on inradius ~0.471*scale.
+  // Setting the cap at 0.47*scale means it only binds at extreme tilt angles
+  // where the projected inradius would otherwise exceed the face's true size.
+  const fontSize = Math.max(6, Math.min(scale * 0.47, inradius * 1.9));
   ctx.font = `700 ${fontSize}px 'Fraunces', serif`;
   ctx.globalAlpha = opacity;
   ctx.fillStyle = fillColor;
@@ -1422,9 +1430,9 @@ function drawD4FaceNumerals(ctx, die, face, rotVerts, cx, cy, scale, dieOpacity)
     const dvy = vy - projCy;
     const dist = Math.hypot(dvx, dvy) || 1;
 
-    // Place the number 48% of the way from centroid to vertex,
-    // so it sits in the vertex region with clear space from the edges.
-    const t = 0.48;
+    // Place the number 42% of the way from centroid to vertex — pulled in
+    // slightly from 48% to give the larger numerals room without clipping.
+    const t = 0.42;
     const tx = projCx + dvx * t;
     const ty = projCy + dvy * t;
 
