@@ -852,8 +852,8 @@ const DIE_GAP = 22;
 // never added to `order`).
 function buildFreshDie(sides, isPercentileUnit) {
   const die = buildDieModel(sides, isPercentileUnit);
-  const restX = rollFloat(-120, 120);
-  const restY = rollFloat(-120, 120);
+  const restX = rollFloat(-180, 180);
+  const restY = rollFloat(-180, 180);
   const qx = quatFromAxisAngle([1, 0, 0], restX);
   const qy = quatFromAxisAngle([0, 1, 0], restY);
   die.currentQuat = quatMultiply(qy, qx);
@@ -1634,7 +1634,7 @@ function buildTumbleWaypoints(startQuat, sides, finalSolver) {
   // The coin (d2) keeps a busier  tumble — it's a thin disc, so
   // it needs more flips to read clearly as "tumbling" rather than just
   // wobbling once or twice. Every other die uses a calmer roll.
-  const waypointCount = sides === 2 ? 18 : 9;
+  const waypointCount = sides === 2 ? 14 : 7;
   const quats = [startQuat];
   let current = startQuat;
 
