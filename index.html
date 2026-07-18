@@ -1445,7 +1445,7 @@ function drawD4FaceNumerals(ctx, die, face, rotVerts, cx, cy, scale, dieOpacity)
   const projCx = (projected[0][0] + projected[1][0] + projected[2][0]) / 3;
   const projCy = (projected[0][1] + projected[1][1] + projected[2][1]) / 3;
 
-  // Inradius from centroid — used for fade and as a cap to prevent overflow on tiny faces.
+  // Inradius from centroid — used for fade only (centroid-to-nearest-edge distance).
   const inradius = polygonInradiusFromPoint(projCx, projCy, projected);
 
   // D4 faces are always foreshortened when settled so use a lower fade floor.
@@ -1454,22 +1454,28 @@ function drawD4FaceNumerals(ctx, die, face, rotVerts, cx, cy, scale, dieOpacity)
   const opacity = (MIN_OPACITY + fadeT * (1 - MIN_OPACITY)) * dieOpacity;
   if (opacity <= 0.01) return;
 
-  // Size purely from projected inradius — same approach as every other die type.
-  // Using a separate scale-based floor caused the font size to jump abruptly the
-  // moment the die settled (the two size signals switched dominance), which read
-  // as an uncanny pop. A consistent inradius curve means the size changes smoothly
-  // throughout the tumble and lands naturally on the settled value.
-  // Cap proportional to scale rather than a fixed pixel value, so the ceiling
-  // rises at the same rate as the face polygon. A fixed cap (e.g. 30px) hits
-  // while the face is still growing and makes the numbers appear to freeze.
-  // D4 local2d circumradius ~0.943; inradius of equilateral triangle = circumradius/2
-  // ~0.471. At z~0, projectPoint factor ~1, so face-on inradius ~0.471*scale.
-  // Setting the cap at 0.47*scale means it only binds at extreme tilt angles
-  // where the projected inradius would otherwise exceed the face's true size.
-  // During tumbling, D4 numerals can look large and cluttered because three numbers
-  // compete for space on a fully face-on triangle. Scale them down by a tumble factor.
-  const tumbleShrink = die.settled ? 1.0 : 0.7;
-  const fontSize = Math.min(scale * 0.47, inradius * 1.9) * tumbleShrink;
+  // Font sizing for D4 vertex labels uses the circumradius (centroid-to-vertex
+  // distance in screen space) rather than the inradius (centroid-to-edge).
+  // When the die is settled face-down, visible faces are seen nearly edge-on so
+  // the *inradius* collapses toward zero — but each label lives 42% of the way
+  // toward its vertex, and the circumradius still reflects how much room that
+  // label actually has. This gives stable, readable numbers at every orientation
+  // without consulting die.settled (which would cause a visible pop as the two
+  // size signals switched dominance the moment the die landed).
+  //
+  // D4 local2d circumradius ≈ 0.943; at face-on (z≈0) projectPoint factor ≈ 1,
+  // so face-on projected circumradius ≈ 0.943 * scale. The label at t=0.42 sits
+  // inside that, so 0.42 * circumradius gives the rough clearance budget. We use
+  // 0.38 * circumradius (slightly conservative) and cap at scale * 0.47 to
+  // prevent overflow on a fully face-on triangle during tumbling, where all three
+  // labels compete for space.
+  // Average centroid-to-vertex distance across the 3 projected vertices.
+  const circumradius = (
+    Math.hypot(projected[0][0] - projCx, projected[0][1] - projCy) +
+    Math.hypot(projected[1][0] - projCx, projected[1][1] - projCy) +
+    Math.hypot(projected[2][0] - projCx, projected[2][1] - projCy)
+  ) / 3;
+  const fontSize = Math.min(scale * 0.40, circumradius * 0.55);
   ctx.font = `700 ${fontSize}px 'Almendra', serif`;
   ctx.globalAlpha = opacity;
   ctx.fillStyle = fillColor;
