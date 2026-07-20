@@ -1303,63 +1303,58 @@ function drawFaceNumeral(ctx, die, face, rotCentroid, rotUp, rotVerts, cx, cy, s
   for (const [vx, vy] of projected) { centerX += vx; centerY += vy; }
   centerX /= np; centerY /= np;
 
-  // Derive the screen-space "up" direction by fitting a linear map from the
-  // face's local 2D coordinate system to screen coordinates, then applying it
-  // to face.upLocal2d. This is completely stable at all orientations — including
-  // when the face is nearly edge-on — because it works entirely in 2D screen
-  // space and never involves a perspective divide or a depth component.
+  // Snap the numeral to the nearest face-geometry direction, with hysteresis.
   //
-  // Why previous approaches failed:
-  //  - Tip projection: projected rotCentroid + rotUp*0.3 through perspective.
-  //    When face is edge-on, the centroid and tip are at very different depths,
-  //    making the denominator swing and tipX/tipY jump → numeral spins.
-  //  - numeralRotationRad(rotUp): reads x/y of the rotated 3D up vector.
-  //    When the face is edge-on, the face normal is sideways, so rotUp points
-  //    mostly in z — its x/y components become near-zero and noisy → atan2 spins.
+  // CANDIDATE DIRECTIONS
+  // Computed as (rotVerts[i] − rotCentroid) projected orthographically to screen,
+  // NOT as (projected[i] − centerXY). The difference matters:
+  //   projected[i] − centerXY  uses per-vertex perspective factors f_i and f_G
+  //     which differ across the face; as the die rotates f_i changes differently
+  //     for each vertex → the direction drifts a few degrees → visible rotation.
+  //   rotVerts[i] − rotCentroid  = R·(V_i − G), linear in the rotation matrix R.
+  //     Its screen projection (x same, y negated for canvas) tracks the face's
+  //     physical rotation exactly — zero drift regardless of orientation.
   //
-  // The fix: face.upLocal2d stores the local 2D direction (px, py) that
-  // corresponds to face.up, computed once in buildDieModel. At render time we
-  // recover the screen-space up by least-squares fitting the affine map
-  // local2d → projected using all face vertices, then applying its linear
-  // part to (px, py). The fitted direction is as stable as the projected
-  // vertices themselves, which are computed from the rotation matrix and never
-  // suffer from perspective-divide instability.
-  //
-  // Fit: minimize sum_i |A*local2d_i + b - projected_i|^2 for 2x2 A and 2-vec b.
-  // Normal equations for b: b = mean(projected) - A*mean(local2d).
-  // Normal equations for A: (sum lx_i^2, sum lx_i*ly_i; ...) * A^T = sum p_i * l_i^T
-  // For the rotation angle we only need the direction of A*(upLx, upLy),
-  // so we solve just the linear part using centred coordinates.
-  const local2d = face.local2d;
-  const [upLx, upLy] = face.upLocal2d;
-  let mlx = 0, mly = 0, msx = 0, msy = 0;
-  for (let i = 0; i < np; i++) {
-    mlx += local2d[i][0]; mly += local2d[i][1];
-    msx += projected[i][0]; msy += projected[i][1];
+  // HYSTERESIS
+  // Without it, when rotUp straddles the midpoint between two candidates the
+  // chosen snap oscillates every frame, causing the numeral to jump ±60° rapidly.
+  // We store the last chosen candidate index in face._snapK and only switch when
+  // a rival candidate beats it by a margin of 0.15 (≈ 9° for adjacent candidates
+  // 60° apart on a d20 triangle, ≈ 6° for 45°-apart candidates on a d6 square).
+  const nv = rotVerts.length;
+  const cX = [], cY = [];
+  for (let i = 0; i < nv; i++) {
+    const j = (i + 1) % nv;
+    let dx, dy, dl;
+    // Toward vertex i: R·(V_i − G), projected to screen (y inverted)
+    dx = rotVerts[i][0] - rotCentroid[0];
+    dy = -(rotVerts[i][1] - rotCentroid[1]);
+    dl = Math.hypot(dx, dy);
+    if (dl > 0.001) { cX.push(dx / dl); cY.push(dy / dl); }
+    // Toward midpoint of edge i→j
+    dx = (rotVerts[i][0] + rotVerts[j][0]) * 0.5 - rotCentroid[0];
+    dy = -((rotVerts[i][1] + rotVerts[j][1]) * 0.5 - rotCentroid[1]);
+    dl = Math.hypot(dx, dy);
+    if (dl > 0.001) { cX.push(dx / dl); cY.push(dy / dl); }
   }
-  mlx /= np; mly /= np; msx /= np; msy /= np;
-  // Covariance: C = sum (l_i - ml) * (l_i - ml)^T, cross = sum (s_i - ms) * (l_i - ml)^T
-  let cll = 0, clu = 0, cuu = 0, cxl = 0, cxu = 0, cyl = 0, cyu = 0;
-  for (let i = 0; i < np; i++) {
-    const dl = local2d[i][0] - mlx, du = local2d[i][1] - mly;
-    const dx = projected[i][0] - msx, dy = projected[i][1] - msy;
-    cll += dl*dl; clu += dl*du; cuu += du*du;
-    cxl += dx*dl; cxu += dx*du; cyl += dy*dl; cyu += dy*du;
+  if (cX.length === 0) return;
+  // Reference direction from rotUp — used only to pick which candidate.
+  // Geometric guarantee: rotNormal ⊥ rotUp → rotUpLen ≥ |rotNormal[2]| → the
+  // guard below never fires for any face above the backface-cull threshold.
+  const refLen = Math.hypot(rotUp[0], rotUp[1]);
+  if (refLen < 0.02) return;
+  const refX = rotUp[0] / refLen, refY = -rotUp[1] / refLen;
+  // Best candidate this frame.
+  let bestK = 0, bestDot = -Infinity;
+  for (let k = 0; k < cX.length; k++) {
+    const d = cX[k] * refX + cY[k] * refY;
+    if (d > bestDot) { bestDot = d; bestK = k; }
   }
-  // Solve 2x2 system: [cll clu; clu cuu] * [ax; ay] = [cxl; cxu] for screen-x row
-  //                                          [bx; by] = [cyl; cyu] for screen-y row
-  const det = cll*cuu - clu*clu || 1;
-  // A maps (upLx, upLy) in local space to screen direction
-  const axl = (cxl*cuu - cxu*clu) / det, axu = (cxu*cll - cxl*clu) / det;
-  const byl = (cyl*cuu - cyu*clu) / det, byu = (cyu*cll - cyl*clu) / det;
-  const rawUpDirX = axl*upLx + axu*upLy;
-  const rawUpDirY = byl*upLx + byu*upLy;
-  const upDirLen = Math.hypot(rawUpDirX, rawUpDirY) || 1;
-  const upDirX = rawUpDirX / upDirLen;
-  const upDirY = rawUpDirY / upDirLen;
-  // Angle: upDir points in screen-space "up" direction for the numeral.
-  // atan2(upDirX, -upDirY) converts from "direction vector" to canvas rotation angle
-  // (rotate(angle) after translate makes local-Y point in upDir direction).
+  // Hysteresis: keep stored snap unless rival is clearly better.
+  let snapK = (face._snapK != null && face._snapK < cX.length) ? face._snapK : bestK;
+  if (bestDot > cX[snapK] * refX + cY[snapK] * refY + 0.15) snapK = bestK;
+  face._snapK = snapK;
+  const upDirX = cX[snapK], upDirY = cY[snapK];
   const angle = Math.atan2(upDirX, -upDirY);
 
   // Font size from the geometric mean of two metrics:
@@ -1403,7 +1398,10 @@ function drawFaceNumeral(ctx, die, face, rotCentroid, rotUp, rotVerts, cx, cy, s
   // with the face's apparent size so very edge-on faces recede naturally,
   // but the colour itself is always the full-contrast ink.
   const fillColor = isDark ? '#f4ead2' : '#000000';
-  const FADE_LOW = 2.5, FADE_HIGH = 6, MIN_OPACITY = 0.75;
+  // MIN_OPACITY = 0: numerals fade fully to invisible as the face goes edge-on.
+  // Physically correct (you cannot read a numeral on a 2-pixel sliver) and
+  // defence-in-depth alongside the rotUpLen guard above.
+  const FADE_LOW = 2.5, FADE_HIGH = 6, MIN_OPACITY = 0;
   const fadeT = inradius <= FADE_LOW ? 0 : inradius >= FADE_HIGH ? 1 : (inradius - FADE_LOW) / (FADE_HIGH - FADE_LOW);
   const opacity = (MIN_OPACITY + fadeT * (1 - MIN_OPACITY)) * dieOpacity;
   if (opacity <= 0.01) return;
