@@ -29,9 +29,10 @@ SOFTWARE.
 <title>DiceTray</title>
 <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEsAAABKCAYAAADzEqlPAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAAEnQAABJ0Ad5mH3gAACfKSURBVHhevZx3gBRF8/c/M7t7d3s53+3l846ck+BDkKiIihI8EyKoKI8KgqAgBhTFBCiIiCJKEEVAMkiOgoiS85Eu55xv93Zn3j9mZsMFxOf5Pe8XdOnpqZ7u6urqquogRPTqIAuADIiigAxoaSTZnkYU7M8FQJIkBJT3FTrZnlboHGnnfEmS1XKUtKNcGSRH+TIyoigiC6h02vc0OuW5g077nkiyyiCE52ambTrLIGPvy5IyYTt2Sm2+hE1bpId1Lhm7pcHYYASUblXRdNqBabNmkDSCuDIZp+HvbmVIaVHuqiPsc+dNQy6uWLyAr3HJKi9qhdUpzbJCs9qT13kbB6dMo37XQAsouEaTVz9B71vqflS6r0yZIEgrOkKNLlkHZHWTIysiopdmlXn6NJXX1pVzvNQaektXYIkX062nWWAE465e90mCoxdjqJHm1akl9SjqioOARBBB2INgFZVMe8ICjiLEvIEoh6pfdlm4SMjF6vV9Iaw+2c03SVjCwpzwRZRqm8AEjImoSjMMbD3R0PoxvHLl/FUleH0JgOU0eCxhztudyIDhMierWXlV52QKsoqOJ6G3me7m4EGb1IvplGcIA/oigi04noRBFR1KHTKcNHFAV0og4ZmdLyCsICA9DrDQiiTG5BMcH+fnh7eaLX6dDpdAgC6ESdvTxRENDpdPZyRFFEJwqIosiB4yeps9kI9vOlsKwcnSgSFhzA9bx8bE71VoTIkW50QtA6x4mZCrNQZglNhgR19tHSWmGKPDpmHxAUNSQItImJoay0HFEUMYUEsuS9N3B3MzgqWA8l5RW8+fliMvLyXTrgifsH88jgfhj0epf360OSJLYePMovuw5w+ORp4qMiEASBG2mZ9L2zC8MH3U1yShqHTp7F29vIhdQMbPbpVpFkO9Q2aHAeggCCTtWBEb3a2x/frhTVz4sLC+XylRt8+fYU3pq/BKvNxoeTx/Ngv17odToXOg0l5RWs2rKTp4cNwdfLq352kzh39Sab9h7kl90H8HR3w9vbh/zCIvx8vRjarzcj7ulHXEQ4oiiyYc9BvlmziZtZOfgF+VNZU6MMVudh9zcmhx2CqrOc7SJnu0eRMIddJIqikw5zSFhiaBjd2rbirfFjmPTRfG6kZ2Kus/Lr1/Mwerg7t9UOSZKoqTVjNHoouuwWqKmtZfP+31i/+wAnLyUTG2nCZpVIzcpmcO8ejLinH/27d2kgjacuJfPy7M/IyM6lS7vWXM3NxWq12nWRJmF25gmOkSLXs7NkWUaI7N1B5h9IUf28NrFxpKZlsHfZFwT6+nIlJZX7x08lPDiQpMEDefHx4Q0aoaHWYuHjJSspKa/g5ScfISEm0oVxf52/zMZ9h1i/ez9BAf54Gj3JyMklOiyUYQP7MOKe/oQFBTSok4bisnL6PPVvLFYr1TW1tGgeT1ZRMZLksAXBocNuJWEyMjrfuPB3HR9TfjXFprAZREHtCScdhqoYayqqmDgqiW5tWyGKIsEB/lSbzWTk5LP79+MMG3A3fj7ejTbIarNRUFLKfb3vYvmGbZRWlBPg78u6Hft4c8ESlm3YSnlVDR5uBvIKiunZuR3Tn32KN54fTY8ObfH2NBi6bm8AAA==" />
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Almendra:opsz,wght@9..144,400;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Almendra:opsz,wght@9..144,400;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;700&family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&family=Rajdhani:wght@400;500;600;700&family=Uncial+Antiqua&family=Share+Tech+Mono&family=Playfair+Display:wght@400;600;700&family=Courier+Prime:wght@400;700&display=swap');
 
   :root {
+    /* Tray theme variables — overridden by JS when a tray is selected */
     --felt-1: #1f4d3a;
     --felt-2: #16382b;
     --chalk: #f4ead2;
@@ -40,6 +41,26 @@ SOFTWARE.
     --brass-dim: #8d7438;
     --ink: #0f2a20;
     --ember: #d8654a;
+    /* Font families — swapped per tray */
+    --font-title: 'Almendra', serif;
+    --font-ui: 'JetBrains Mono', monospace;
+    /* Button palette */
+    --btn-bg: rgba(244,234,210,0.06);
+    --btn-border: rgba(244,234,210,0.22);
+    --btn-hover-bg: rgba(244,234,210,0.14);
+    --roll-btn-grad-top: var(--brass);
+    --roll-btn-grad-bot: var(--brass-dim);
+    --roll-btn-ink: var(--ink);
+    --adv-btn-bg: rgba(154,205,170,0.1);
+    --adv-btn-border: rgba(154,205,170,0.75);
+    --adv-btn-hover-bg: rgba(154,205,170,0.2);
+    --disadv-btn-bg: rgba(196,122,106,0.1);
+    --disadv-btn-border: rgba(196,122,106,0.75);
+    --disadv-btn-hover-bg: rgba(196,122,106,0.2);
+    /* Background pattern */
+    --bg-pattern: repeating-linear-gradient(45deg, rgba(0,0,0,0.025) 0px, rgba(0,0,0,0.025) 2px, transparent 2px, transparent 4px);
+    --surface-line: rgba(244,234,210,0.18);
+    --surface-line-dim: rgba(244,234,210,0.10);
   }
 
   * { box-sizing: border-box; }
@@ -49,11 +70,12 @@ SOFTWARE.
     min-height: 100vh;
     background:
       radial-gradient(ellipse at 50% -10%, rgba(255,255,255,0.05), transparent 60%),
-      repeating-linear-gradient(45deg, rgba(0,0,0,0.025) 0px, rgba(0,0,0,0.025) 2px, transparent 2px, transparent 4px),
+      var(--bg-pattern),
       linear-gradient(160deg, var(--felt-1), var(--felt-2));
     color: var(--chalk);
-    font-family: 'Almendra', serif;
+    font-family: var(--font-title);
     overflow-x: hidden;
+    transition: background 0.4s ease, color 0.3s ease;
   }
 
   .tray-root {
@@ -71,13 +93,21 @@ SOFTWARE.
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid rgba(244,234,210,0.18);
+    border-bottom: 1px solid var(--surface-line);
     padding-bottom: 14px;
     margin-bottom: 20px;
     gap: 12px;
+    flex-wrap: wrap;
+  }
+  .tray-controls {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
   }
 
-  .tray-title { font-size: 28px; font-weight: 700; margin: 0; color: var(--chalk); flex-shrink: 0; }
+  .tray-title { font-family: var(--font-title); font-size: 28px; font-weight: 700; margin: 0; color: var(--chalk); flex-shrink: 0; transition: color 0.3s; }
   .tray-title .accent { color: var(--brass); font-style: italic; font-weight: 600; }
 
   /* Colour scheme dropdown */
@@ -87,7 +117,7 @@ SOFTWARE.
   }
 
   .colour-scheme-select {
-    font-family: 'Almendra', serif;
+    font-family: var(--font-ui);
     font-size: 13px;
     letter-spacing: 0;
     background: rgba(244,234,210,0.07);
@@ -114,20 +144,20 @@ SOFTWARE.
   }
   /* Style the select options (limited browser support but helpful where it works) */
   .colour-scheme-select option {
-    background: #1f4d3a;
+    background: var(--felt-1);
     color: var(--chalk);
-    font-family: 'Almendra', serif;
+    font-family: var(--font-ui);
     font-size: 13px;
   }
 
   .picker { width: 100%; display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
 
   .picker-btn {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: var(--font-ui);
     font-size: 15px;
     font-weight: 500;
-    background: rgba(244,234,210,0.06);
-    border: 1px solid rgba(244,234,210,0.22);
+    background: var(--btn-bg);
+    border: 1px solid var(--btn-border);
     color: var(--chalk);
     padding: 11px 18px 11px 13px;
     border-radius: 6px;
@@ -135,7 +165,7 @@ SOFTWARE.
     display: inline-flex;
     align-items: center;
     gap: 9px;
-    transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    transition: background 0.15s, border-color 0.15s, transform 0.1s, color 0.3s;
   }
   .picker-icon {
     width: 24px;
@@ -152,13 +182,13 @@ SOFTWARE.
     vector-effect: non-scaling-stroke;
   }
   .picker-btn:disabled .picker-icon path { fill-opacity: 0.5; }
-  .picker-btn:hover:not(:disabled) { background: rgba(244,234,210,0.14); border-color: var(--brass); }
+  .picker-btn:hover:not(:disabled) { background: var(--btn-hover-bg); border-color: var(--brass); }
   .picker-btn:active:not(:disabled) { transform: scale(0.96); }
   .picker-btn:disabled { opacity: 0.35; cursor: not-allowed; }
   .picker-btn:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
 
   .picker-clear {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: var(--font-ui);
     font-size: 12px;
     background: none;
     border: 1px solid rgba(216,101,74,0.5);
@@ -175,11 +205,12 @@ SOFTWARE.
   .tray-surface {
     width: 100%;
     background: rgba(0,0,0,0.16);
-    border: 1px solid rgba(244,234,210,0.1);
+    border: 1px solid var(--surface-line-dim);
     border-radius: 14px;
     padding: 18px 14px 10px;
     min-height: 240px;
     box-shadow: inset 0 2px 18px rgba(0,0,0,0.35);
+    transition: border-color 0.3s;
   }
 
   .tray-empty {
@@ -188,7 +219,7 @@ SOFTWARE.
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: 'JetBrains Mono', monospace;
+    font-family: var(--font-ui);
     font-size: 13px;
     color: var(--chalk-dim);
     text-align: center;
@@ -215,10 +246,10 @@ SOFTWARE.
     gap: 8px;
     margin-top: 16px;
     padding-top: 14px;
-    border-top: 1px solid rgba(244,234,210,0.1);
+    border-top: 1px solid var(--surface-line-dim);
   }
   .group-chip {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: var(--font-ui);
     font-size: 15px;
     color: var(--chalk-dim);
     background: rgba(244,234,210,0.06);
@@ -236,7 +267,7 @@ SOFTWARE.
     border: 1px solid rgba(244,234,210,0.25);
     background: rgba(244,234,210,0.05);
     color: var(--chalk);
-    font-family: 'JetBrains Mono', monospace;
+    font-family: var(--font-ui);
     font-size: 16px;
     line-height: 1;
     cursor: pointer;
@@ -262,7 +293,7 @@ SOFTWARE.
     justify-self: center;
   }
   .tray-sub {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: var(--font-ui);
     font-size: 11px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -280,17 +311,17 @@ SOFTWARE.
   }
 
   .roll-btn {
-    font-family: 'Almendra', serif;
+    font-family: var(--font-title);
     font-weight: 700;
     font-size: 18px;
-    background: linear-gradient(180deg, var(--brass), var(--brass-dim));
-    color: var(--ink);
+    background: linear-gradient(180deg, var(--roll-btn-grad-top), var(--roll-btn-grad-bot));
+    color: var(--roll-btn-ink);
     border: none;
     border-radius: 10px;
     padding: 14px 30px;
     cursor: pointer;
     box-shadow: 0 3px 0 rgba(0,0,0,0.3), 0 6px 14px rgba(0,0,0,0.25);
-    transition: transform 0.1s, box-shadow 0.1s;
+    transition: transform 0.1s, box-shadow 0.1s, background 0.3s;
   }
   .roll-btn:hover:not(:disabled) { transform: translateY(-1px); }
   .roll-btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.3), 0 2px 6px rgba(0,0,0,0.25); }
@@ -298,22 +329,22 @@ SOFTWARE.
   .roll-btn:focus-visible { outline: 2px solid var(--chalk); outline-offset: 3px; }
 
   .adv-btn {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: var(--font-ui);
     font-size: 13px;
     font-weight: 600;
-    background: rgba(154,205,170,0.1);
-    border: 1.5px solid rgba(154,205,170,0.75);
+    background: var(--adv-btn-bg);
+    border: 1.5px solid var(--adv-btn-border);
     color: var(--chalk);
     padding: 11px 18px;
     border-radius: 8px;
     cursor: pointer;
-    transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    transition: background 0.15s, border-color 0.15s, transform 0.1s, color 0.3s;
   }
-  .adv-btn:hover:not(:disabled) { background: rgba(154,205,170,0.2); border-color: rgba(154,205,170,1); }
+  .adv-btn:hover:not(:disabled) { background: var(--adv-btn-hover-bg); border-color: var(--adv-btn-border); filter: brightness(1.2); }
   .adv-btn:active:not(:disabled) { transform: translateY(2px); }
-  .adv-btn:disabled { opacity: 0.4; cursor: not-allowed; background: rgba(244,234,210,0.06); border-color: rgba(244,234,210,0.22); }
-  .adv-btn.disadv { background: rgba(196,122,106,0.1); border-color: rgba(196,122,106,0.75); }
-  .adv-btn.disadv:hover:not(:disabled) { background: rgba(196,122,106,0.2); border-color: rgba(196,122,106,1); }
+  .adv-btn:disabled { opacity: 0.4; cursor: not-allowed; background: var(--btn-bg); border-color: var(--btn-border); }
+  .adv-btn.disadv { background: var(--disadv-btn-bg); border-color: var(--disadv-btn-border); }
+  .adv-btn.disadv:hover:not(:disabled) { background: var(--disadv-btn-hover-bg); border-color: var(--disadv-btn-border); filter: brightness(1.2); }
   .adv-btn:focus-visible { outline: 2px solid var(--chalk); outline-offset: 3px; }
 
   .modifier-row {
@@ -335,14 +366,14 @@ SOFTWARE.
     cursor: text;
   }
   .modifier-label {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: var(--font-ui);
     font-size: 11px;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--chalk-dim);
   }
   .modifier-sign-btn {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: var(--font-ui);
     font-size: 15px;
     font-weight: 600;
     line-height: 1;
@@ -362,7 +393,7 @@ SOFTWARE.
 
   .modifier-input {
     width: 4ch;
-    font-family: 'JetBrains Mono', monospace;
+    font-family: var(--font-ui);
     font-size: 16px;
     font-weight: 500;
     background: rgba(244,234,210,0.08);
@@ -383,7 +414,7 @@ SOFTWARE.
     text-align: center;
     padding-top: 16px;
     margin-top: 8px;
-    border-top: 1px solid rgba(244,234,210,0.1);
+    border-top: 1px solid var(--surface-line-dim);
     min-height: 64px;
   }
   .roll-total .total-number {
@@ -399,7 +430,7 @@ SOFTWARE.
     opacity: 0.3;
   }
   .roll-total .total-caption {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: var(--font-ui);
     font-size: 12px;
     letter-spacing: 0.04em;
     color: var(--chalk-dim);
@@ -407,15 +438,16 @@ SOFTWARE.
     margin-top: 4px;
   }
 
-  .history { width: 100%; margin-top: 22px; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: var(--chalk-dim); }
+  .history { width: 100%; margin-top: 22px; font-family: var(--font-ui); font-size: 11.5px; color: var(--chalk-dim); }
   .history-title { text-transform: uppercase; letter-spacing: 0.08em; font-size: 10px; color: var(--brass-dim); margin-bottom: 8px; }
-  .history-row { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; border-bottom: 1px solid rgba(244,234,210,0.08); }
+  .history-row { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; border-bottom: 1px solid var(--surface-line-dim); }
   .history-row .h-total { color: var(--chalk); flex-shrink: 0; }
   .history-row .h-summary { opacity: 0.8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   @media (max-width: 480px) {
     .tray-title { font-size: 23px; }
-    .colour-scheme-select { min-width: 120px; font-size: 12px; }
+    .colour-scheme-select { min-width: 110px; font-size: 12px; }
+    .tray-controls { gap: 6px; }
   }
 </style>
 </head>
@@ -423,22 +455,36 @@ SOFTWARE.
 <div class="tray-root">
   <div class="tray-header">
     <h1 class="tray-title">Dice<span class="accent">Tray</span></h1>
-    <div class="colour-scheme-wrapper">
-      <select class="colour-scheme-select" id="colour-scheme-select" aria-label="Customise dice colours">
-        <option value="" disabled selected>Customise Dice</option>
-        <option value="classic">White &amp; Black</option>
-        <option value="amethyst">Purple &amp; Blue</option>
-        <option value="crimson">Red &amp; Gold</option>
-        <option value="midnight">Midnight &amp; Silver</option>
-        <option value="forest">Forest &amp; Copper</option>
-        <option value="obsidian">Obsidian &amp; Amber</option>
-        <option value="slate">Slate &amp; Jade</option>
-        <option value="burgundy">Burgundy &amp; Cream</option>
-        <option value="prussian">Prussian &amp; Rose</option>
-        <option value="teal">Teal &amp; Coral</option>
-        <option value="charcoal">Charcoal &amp; Lime</option>
-
-      </select>
+    <div class="tray-controls">
+      <div class="colour-scheme-wrapper">
+        <select class="colour-scheme-select" id="colour-scheme-select" aria-label="Customise dice colours">
+          <option value="" disabled selected>Customise Dice</option>
+          <option value="classic">White &amp; Black</option>
+          <option value="amethyst">Purple &amp; Blue</option>
+          <option value="crimson">Red &amp; Gold</option>
+          <option value="midnight">Midnight &amp; Silver</option>
+          <option value="forest">Forest &amp; Copper</option>
+          <option value="obsidian">Obsidian &amp; Amber</option>
+          <option value="slate">Slate &amp; Jade</option>
+          <option value="burgundy">Burgundy &amp; Cream</option>
+          <option value="prussian">Prussian &amp; Rose</option>
+          <option value="teal">Teal &amp; Coral</option>
+          <option value="charcoal">Charcoal &amp; Lime</option>
+        </select>
+      </div>
+      <div class="colour-scheme-wrapper">
+        <select class="colour-scheme-select" id="tray-theme-select" aria-label="Customise tray theme">
+          <option value="" disabled selected>Customise Tray</option>
+          <option value="green-felt">Green Felt</option>
+          <option value="mahogany">Mahogany Table</option>
+          <option value="midnight-velvet">Midnight Velvet</option>
+          <option value="parchment">Ancient Parchment</option>
+          <option value="slate-stone">Slate Stone</option>
+          <option value="deep-ocean">Deep Ocean</option>
+          <option value="ember-forge">Ember Forge</option>
+          <option value="ivory-marble">Ivory Marble</option>
+        </select>
+      </div>
     </div>
   </div>
 
@@ -2027,6 +2073,268 @@ document.getElementById('dice-canvas').addEventListener('click', (e) => {
   });
 
   if (closestDie) rerollDie(closestDie);
+});
+
+/* =========================================================================
+   TRAY THEMES
+   Each theme defines CSS custom property overrides applied to :root.
+   Keys map directly to CSS variable names (without --).
+   ========================================================================= */
+const TRAY_THEMES = {
+  'green-felt': {
+    label: 'Green Felt',
+    // Default — matches original :root values
+    'felt-1': '#1f4d3a',
+    'felt-2': '#16382b',
+    'chalk': '#f4ead2',
+    'chalk-dim': '#cfc6ab',
+    'brass': '#c9a24b',
+    'brass-dim': '#8d7438',
+    'ink': '#0f2a20',
+    'ember': '#d8654a',
+    'font-title': "'Almendra', serif",
+    'font-ui': "'JetBrains Mono', monospace",
+    'btn-bg': 'rgba(244,234,210,0.06)',
+    'btn-border': 'rgba(244,234,210,0.22)',
+    'btn-hover-bg': 'rgba(244,234,210,0.14)',
+    'roll-btn-grad-top': '#c9a24b',
+    'roll-btn-grad-bot': '#8d7438',
+    'roll-btn-ink': '#0f2a20',
+    'adv-btn-bg': 'rgba(154,205,170,0.1)',
+    'adv-btn-border': 'rgba(154,205,170,0.75)',
+    'adv-btn-hover-bg': 'rgba(154,205,170,0.2)',
+    'disadv-btn-bg': 'rgba(196,122,106,0.1)',
+    'disadv-btn-border': 'rgba(196,122,106,0.75)',
+    'disadv-btn-hover-bg': 'rgba(196,122,106,0.2)',
+    'bg-pattern': 'repeating-linear-gradient(45deg, rgba(0,0,0,0.025) 0px, rgba(0,0,0,0.025) 2px, transparent 2px, transparent 4px)',
+    /* Subtle surface lines — adapts to light/dark tray */
+    'surface-line': 'rgba(244,234,210,0.18)',
+    'surface-line-dim': 'rgba(244,234,210,0.10)',
+  },
+  'mahogany': {
+    label: 'Mahogany Table',
+    'felt-1': '#3b1a0d',
+    'felt-2': '#2a0f06',
+    'chalk': '#f5e6c8',
+    'chalk-dim': '#c8ab7a',
+    'brass': '#e8c060',
+    'brass-dim': '#a07830',
+    'ink': '#1a0800',
+    'ember': '#e05030',
+    'font-title': "'Cinzel', serif",
+    'font-ui': "'Courier Prime', monospace",
+    'btn-bg': 'rgba(245,230,200,0.07)',
+    'btn-border': 'rgba(232,192,96,0.3)',
+    'btn-hover-bg': 'rgba(232,192,96,0.15)',
+    'roll-btn-grad-top': '#e8c060',
+    'roll-btn-grad-bot': '#a07830',
+    'roll-btn-ink': '#1a0800',
+    'adv-btn-bg': 'rgba(200,160,80,0.12)',
+    'adv-btn-border': 'rgba(200,160,80,0.7)',
+    'adv-btn-hover-bg': 'rgba(200,160,80,0.25)',
+    'disadv-btn-bg': 'rgba(200,80,50,0.12)',
+    'disadv-btn-border': 'rgba(200,80,50,0.7)',
+    'disadv-btn-hover-bg': 'rgba(200,80,50,0.25)',
+    'bg-pattern': 'repeating-linear-gradient(0deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 8px), repeating-linear-gradient(90deg, rgba(255,180,80,0.03) 0px, rgba(255,180,80,0.03) 1px, transparent 1px, transparent 40px)',
+    'surface-line': 'rgba(232,192,96,0.25)',
+    'surface-line-dim': 'rgba(232,192,96,0.13)',
+  },
+  'midnight-velvet': {
+    label: 'Midnight Velvet',
+    'felt-1': '#0d0820',
+    'felt-2': '#06041a',
+    'chalk': '#e8d8ff',
+    'chalk-dim': '#a898cc',
+    'brass': '#b090f0',
+    'brass-dim': '#7060b0',
+    'ink': '#0a0618',
+    'ember': '#c060d0',
+    'font-title': "'Uncial Antiqua', cursive",
+    'font-ui': "'Share Tech Mono', monospace",
+    'btn-bg': 'rgba(180,160,255,0.07)',
+    'btn-border': 'rgba(176,144,240,0.28)',
+    'btn-hover-bg': 'rgba(176,144,240,0.16)',
+    'roll-btn-grad-top': '#b090f0',
+    'roll-btn-grad-bot': '#7060b0',
+    'roll-btn-ink': '#0a0618',
+    'adv-btn-bg': 'rgba(100,180,255,0.1)',
+    'adv-btn-border': 'rgba(100,180,255,0.65)',
+    'adv-btn-hover-bg': 'rgba(100,180,255,0.22)',
+    'disadv-btn-bg': 'rgba(200,80,220,0.1)',
+    'disadv-btn-border': 'rgba(200,80,220,0.65)',
+    'disadv-btn-hover-bg': 'rgba(200,80,220,0.22)',
+    'bg-pattern': 'radial-gradient(ellipse at 20% 80%, rgba(100,50,200,0.08) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(50,0,150,0.06) 0%, transparent 50%)',
+    'surface-line': 'rgba(176,144,240,0.22)',
+    'surface-line-dim': 'rgba(176,144,240,0.11)',
+  },
+  'parchment': {
+    label: 'Ancient Parchment',
+    'felt-1': '#c8a870',
+    'felt-2': '#a88850',
+    'chalk': '#2a1800',
+    'chalk-dim': '#5a3800',
+    'brass': '#6a3010',
+    'brass-dim': '#8a5020',
+    'ink': '#f8ecd0',
+    'ember': '#c04010',
+    'font-title': "'IM Fell English', serif",
+    'font-ui': "'Courier Prime', monospace",
+    'btn-bg': 'rgba(42,24,0,0.08)',
+    'btn-border': 'rgba(106,48,16,0.35)',
+    'btn-hover-bg': 'rgba(106,48,16,0.16)',
+    'roll-btn-grad-top': '#6a3010',
+    'roll-btn-grad-bot': '#8a5020',
+    'roll-btn-ink': '#f8ecd0',
+    'adv-btn-bg': 'rgba(40,100,40,0.1)',
+    'adv-btn-border': 'rgba(40,100,40,0.6)',
+    'adv-btn-hover-bg': 'rgba(40,100,40,0.2)',
+    'disadv-btn-bg': 'rgba(160,40,20,0.1)',
+    'disadv-btn-border': 'rgba(160,40,20,0.6)',
+    'disadv-btn-hover-bg': 'rgba(160,40,20,0.2)',
+    'bg-pattern': 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\' opacity=\'0.04\'/%3E%3C/svg%3E")',
+    'surface-line': 'rgba(106,48,16,0.25)',
+    'surface-line-dim': 'rgba(106,48,16,0.13)',
+  },
+  'slate-stone': {
+    label: 'Slate Stone',
+    'felt-1': '#2a2e34',
+    'felt-2': '#1c2026',
+    'chalk': '#e8eef4',
+    'chalk-dim': '#9aaab8',
+    'brass': '#60c8b0',
+    'brass-dim': '#3a9880',
+    'ink': '#0e1418',
+    'ember': '#e06050',
+    'font-title': "'Rajdhani', sans-serif",
+    'font-ui': "'Share Tech Mono', monospace",
+    'btn-bg': 'rgba(232,238,244,0.06)',
+    'btn-border': 'rgba(96,200,176,0.28)',
+    'btn-hover-bg': 'rgba(96,200,176,0.14)',
+    'roll-btn-grad-top': '#60c8b0',
+    'roll-btn-grad-bot': '#3a9880',
+    'roll-btn-ink': '#0e1418',
+    'adv-btn-bg': 'rgba(80,200,160,0.1)',
+    'adv-btn-border': 'rgba(80,200,160,0.65)',
+    'adv-btn-hover-bg': 'rgba(80,200,160,0.22)',
+    'disadv-btn-bg': 'rgba(224,96,80,0.1)',
+    'disadv-btn-border': 'rgba(224,96,80,0.65)',
+    'disadv-btn-hover-bg': 'rgba(224,96,80,0.22)',
+    'bg-pattern': 'repeating-linear-gradient(135deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 12px)',
+    'surface-line': 'rgba(96,200,176,0.22)',
+    'surface-line-dim': 'rgba(96,200,176,0.11)',
+  },
+  'deep-ocean': {
+    label: 'Deep Ocean',
+    'felt-1': '#061828',
+    'felt-2': '#020e1c',
+    'chalk': '#c8f0f8',
+    'chalk-dim': '#7aaabb',
+    'brass': '#30c8e8',
+    'brass-dim': '#1888a8',
+    'ink': '#020810',
+    'ember': '#4080e0',
+    'font-title': "'Cinzel', serif",
+    'font-ui': "'Share Tech Mono', monospace",
+    'btn-bg': 'rgba(48,200,232,0.06)',
+    'btn-border': 'rgba(48,200,232,0.22)',
+    'btn-hover-bg': 'rgba(48,200,232,0.14)',
+    'roll-btn-grad-top': '#30c8e8',
+    'roll-btn-grad-bot': '#1888a8',
+    'roll-btn-ink': '#020810',
+    'adv-btn-bg': 'rgba(48,200,232,0.1)',
+    'adv-btn-border': 'rgba(48,200,232,0.6)',
+    'adv-btn-hover-bg': 'rgba(48,200,232,0.22)',
+    'disadv-btn-bg': 'rgba(64,128,224,0.1)',
+    'disadv-btn-border': 'rgba(64,128,224,0.6)',
+    'disadv-btn-hover-bg': 'rgba(64,128,224,0.22)',
+    'bg-pattern': 'radial-gradient(ellipse at 30% 70%, rgba(0,80,160,0.15) 0%, transparent 60%), radial-gradient(ellipse at 70% 30%, rgba(0,40,120,0.1) 0%, transparent 60%)',
+    'surface-line': 'rgba(48,200,232,0.20)',
+    'surface-line-dim': 'rgba(48,200,232,0.10)',
+  },
+  'ember-forge': {
+    label: 'Ember Forge',
+    'felt-1': '#2a1008',
+    'felt-2': '#1a0804',
+    'chalk': '#ffe8c8',
+    'chalk-dim': '#cc9060',
+    'brass': '#ff8030',
+    'brass-dim': '#c04010',
+    'ink': '#100400',
+    'ember': '#ff4020',
+    'font-title': "'Rajdhani', sans-serif",
+    'font-ui': "'Courier Prime', monospace",
+    'btn-bg': 'rgba(255,132,48,0.07)',
+    'btn-border': 'rgba(255,128,48,0.3)',
+    'btn-hover-bg': 'rgba(255,128,48,0.16)',
+    'roll-btn-grad-top': '#ff8030',
+    'roll-btn-grad-bot': '#c04010',
+    'roll-btn-ink': '#100400',
+    'adv-btn-bg': 'rgba(255,180,48,0.1)',
+    'adv-btn-border': 'rgba(255,180,48,0.65)',
+    'adv-btn-hover-bg': 'rgba(255,180,48,0.22)',
+    'disadv-btn-bg': 'rgba(255,64,32,0.1)',
+    'disadv-btn-border': 'rgba(255,64,32,0.65)',
+    'disadv-btn-hover-bg': 'rgba(255,64,32,0.22)',
+    'bg-pattern': 'repeating-linear-gradient(60deg, rgba(255,80,0,0.03) 0px, rgba(255,80,0,0.03) 1px, transparent 1px, transparent 10px)',
+    'surface-line': 'rgba(255,128,48,0.25)',
+    'surface-line-dim': 'rgba(255,128,48,0.12)',
+  },
+  'ivory-marble': {
+    label: 'Ivory Marble',
+    'felt-1': '#e8e0d4',
+    'felt-2': '#d4c8b8',
+    'chalk': '#1a1410',
+    'chalk-dim': '#4a3e32',
+    'brass': '#2a1e80',
+    'brass-dim': '#1a0e60',
+    'ink': '#f8f0e8',
+    'ember': '#8a1a10',
+    'font-title': "'Playfair Display', serif",
+    'font-ui': "'Courier Prime', monospace",
+    'btn-bg': 'rgba(26,20,16,0.07)',
+    'btn-border': 'rgba(42,30,128,0.3)',
+    'btn-hover-bg': 'rgba(42,30,128,0.14)',
+    'roll-btn-grad-top': '#2a1e80',
+    'roll-btn-grad-bot': '#1a0e60',
+    'roll-btn-ink': '#f8f0e8',
+    'adv-btn-bg': 'rgba(30,100,30,0.08)',
+    'adv-btn-border': 'rgba(30,100,30,0.55)',
+    'adv-btn-hover-bg': 'rgba(30,100,30,0.18)',
+    'disadv-btn-bg': 'rgba(138,26,16,0.08)',
+    'disadv-btn-border': 'rgba(138,26,16,0.55)',
+    'disadv-btn-hover-bg': 'rgba(138,26,16,0.18)',
+    'bg-pattern': 'repeating-linear-gradient(30deg, rgba(0,0,0,0.015) 0px, rgba(0,0,0,0.015) 1px, transparent 1px, transparent 20px), repeating-linear-gradient(150deg, rgba(0,0,0,0.01) 0px, rgba(0,0,0,0.01) 1px, transparent 1px, transparent 30px)',
+    'surface-line': 'rgba(42,30,128,0.22)',
+    'surface-line-dim': 'rgba(42,30,128,0.11)',
+  },
+};
+
+function applyTrayTheme(themeKey) {
+  const theme = TRAY_THEMES[themeKey];
+  if (!theme) return;
+  const root = document.documentElement;
+  const varNames = [
+    'felt-1','felt-2','chalk','chalk-dim','brass','brass-dim','ink','ember',
+    'font-title','font-ui',
+    'btn-bg','btn-border','btn-hover-bg',
+    'roll-btn-grad-top','roll-btn-grad-bot','roll-btn-ink',
+    'adv-btn-bg','adv-btn-border','adv-btn-hover-bg',
+    'disadv-btn-bg','disadv-btn-border','disadv-btn-hover-bg',
+    'bg-pattern','surface-line','surface-line-dim',
+  ];
+  varNames.forEach(v => {
+    if (theme[v] !== undefined) root.style.setProperty('--' + v, theme[v]);
+  });
+  // Update the option background in the colour-scheme-selects to match
+  document.querySelectorAll('.colour-scheme-select option').forEach(opt => {
+    opt.style.background = theme['felt-1'];
+    opt.style.color = theme['chalk'];
+  });
+}
+
+document.getElementById('tray-theme-select').addEventListener('change', (e) => {
+  applyTrayTheme(e.target.value);
+  renderDiceCanvas(); // Refresh dice so stroke colours (felt-2) update
 });
 
 /* =========================================================================
