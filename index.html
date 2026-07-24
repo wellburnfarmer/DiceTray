@@ -466,7 +466,7 @@ SOFTWARE.
 </style>
 </head>
 <body>
-<canvas id="bg-canvas" style="position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;"></canvas>
+<canvas id="bg-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;object-fit:cover;"></canvas>
 <div class="tray-root" style="position:relative;z-index:1;">
   <div class="tray-header">
     <h1 class="tray-title">Dice<span class="accent">Tray</span></h1>
@@ -2114,44 +2114,92 @@ function hexToRgb(hex) {
 }
 
 // Felt: fine crossed fibres — transparent overlay on base colour
-function genFeltTexture(lightHex, w=256, h=256) {
+// Felt — pixel-level random fibre fuzz, no grid. Each pixel gets a brightness
+// based on overlapping short random fibres sampled by position, giving a soft
+// nap look without any warp/weft structure.
+function genFeltTexture(lightHex, w=512, h=512) {
   const c = makeCanvas(w, h);
   const ctx = c.getContext('2d');
-  // transparent base
-  ctx.clearRect(0,0,w,h);
+  const img = ctx.createImageData(w, h);
   const [lr,lg,lb] = hexToRgb(lightHex);
-  // Warp threads (vertical)
-  for (let x = 0; x < w; x += 2) {
-    const bright = Math.random() > 0.5;
-    const a = 0.03 + Math.random() * 0.07;
-    ctx.strokeStyle = bright
-      ? `rgba(255,255,255,${a * 0.8})`
-      : `rgba(0,0,0,${a})`;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(x + Math.random()*1.2, 0);
-    ctx.lineTo(x + Math.random()*1.2, h);
-    ctx.stroke();
+
+  function hash(x, y) { let n = Math.sin(x*127.1 + y*311.7)*43758.5453; return n - Math.floor(n); }
+  function hash3(x, y, z) { let n = Math.sin(x*127.1 + y*311.7 + z*74.3)*43758.5453; return n - Math.floor(n); }
+  function valueNoise(x, y) {
+    const ix=Math.floor(x), iy=Math.floor(y), fx=x-ix, fy=y-iy;
+    const ux=fx*fx*(3-2*fx), uy=fy*fy*(3-2*fy);
+    return hash(ix,iy)*(1-ux)*(1-uy)+hash(ix+1,iy)*ux*(1-uy)+hash(ix,iy+1)*(1-ux)*uy+hash(ix+1,iy+1)*ux*uy;
   }
-  // Weft threads (horizontal)
-  for (let y = 0; y < h; y += 2) {
-    const bright = Math.random() > 0.5;
-    const a = 0.025 + Math.random() * 0.05;
-    ctx.strokeStyle = bright
-      ? `rgba(255,255,255,${a * 0.6})`
-      : `rgba(0,0,0,${a})`;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(0, y + Math.random()*1.2);
-    ctx.lineTo(w, y + Math.random()*1.2);
-    ctx.stroke();
+  function fbm(x, y, oct) {
+    let v=0,a=1,f=1,t=0;
+    for(let i=0;i<oct;i++){v+=valueNoise(x*f,y*f)*a;t+=a;a*=0.5;f*=2.1;}
+    return v/t;
   }
-  // Nap shimmer flecks
-  for (let i = 0; i < 500; i++) {
-    const x = Math.random()*w, y = Math.random()*h;
-    ctx.fillStyle = `rgba(255,255,255,${Math.random()*0.07})`;
-    ctx.fillRect(x, y, 1, 1);
+
+  // Scatter a large number of short fibres; for each output pixel, accumulate
+  // how many fibres pass near it to get a fuzzy density value.
+  // Rather than testing all fibres per pixel (slow), we use noise fields
+  // to simulate fibre density and local nap direction continuously.
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      // Local fibre density — smoothly varying fuzz thickness
+      const density = fbm(x*0.06, y*0.06, 4);
+
+      // Very fine high-freq noise simulates individual fibre cross-sections
+      const fibre1 = fbm(x*0.8,  y*0.8,  3);
+      const fibre2 = fbm(x*0.8+31.7, y*0.8+17.3, 3);
+      const fibre3 = fbm(x*0.8+53.1, y*0.8+42.9, 3);
+
+      // Each fibre layer has a slight directional bias (different angles)
+      // achieved by sampling noise at a rotated coordinate
+      const angle1 = Math.PI * 0.15; // ~27°
+      const angle2 = Math.PI * 0.55; // ~99°
+      const angle3 = Math.PI * 0.82; // ~148°
+      const rx1 = x*Math.cos(angle1) + y*Math.sin(angle1);
+      const ry1 =-x*Math.sin(angle1) + y*Math.cos(angle1);
+      const rx2 = x*Math.cos(angle2) + y*Math.sin(angle2);
+      const ry2 =-x*Math.sin(angle2) + y*Math.cos(angle2);
+      const rx3 = x*Math.cos(angle3) + y*Math.sin(angle3);
+      const ry3 =-x*Math.sin(angle3) + y*Math.cos(angle3);
+      const dir1 = fbm(rx1*0.5, ry1*0.12, 3); // anisotropic — stretched along fibre
+      const dir2 = fbm(rx2*0.5, ry2*0.12, 3);
+      const dir3 = fbm(rx3*0.5, ry3*0.12, 3);
+
+      // Combine three direction layers — each contributes independently
+      const fuzz = (dir1*0.4 + dir2*0.35 + dir3*0.25) * density;
+
+      // Fine surface sheen — specular-like bright flecks from fibre tips
+      const sheen = Math.pow(fbm(x*1.8, y*1.8, 2), 6) * 0.5;
+
+      // Large-scale light/dark pile compression zones (like running a hand across velvet)
+      const zone = fbm(x*0.008, y*0.008, 3) * 0.25 + 0.85;
+
+      const bright = (fuzz * 0.75 + sheen) * zone;
+
+      // Output: mostly transparent, light fibres = slight brightening, dark gaps = slight darkening
+      const aboveMid = bright - 0.5;
+      let r, g, b, alpha;
+      if (aboveMid > 0) {
+        // Bright fibre tip — white tinted slightly with sheen colour
+        r = Math.round(lr + (255-lr)*aboveMid*0.35);
+        g = Math.round(lg + (255-lg)*aboveMid*0.35);
+        b = Math.round(lb + (255-lb)*aboveMid*0.35);
+        alpha = Math.round(aboveMid * 200);
+      } else {
+        // Dark fibre gap / shadow
+        r = 0; g = 0; b = 0;
+        alpha = Math.round(-aboveMid * 120);
+      }
+
+      const i = (y*w+x)*4;
+      img.data[i]   = Math.min(255, Math.max(0, r));
+      img.data[i+1] = Math.min(255, Math.max(0, g));
+      img.data[i+2] = Math.min(255, Math.max(0, b));
+      img.data[i+3] = Math.min(255, Math.max(0, alpha));
+    }
   }
+  ctx.putImageData(img, 0, 0);
   return c.toDataURL();
 }
 
@@ -2227,126 +2275,322 @@ function genMarbleTexture(vein1Hex, vein2Hex, w=512, h=512) {
   return c.toDataURL();
 }
 
-// Slate — strata + fractures, transparent overlay
-function genSlateTexture(midHex, lightHex, w=512, h=256) {
+// Velvet — pixel-level anisotropic microfibre with sheen falloff
+// Models how velvet pile catches light: dark in one direction, bright in another.
+function genVelvetTexture(sheenHex, w=512, h=512) {
   const c = makeCanvas(w, h);
   const ctx = c.getContext('2d');
-  ctx.clearRect(0,0,w,h);
+  const img = ctx.createImageData(w, h);
+  const [sr,sg,sb] = hexToRgb(sheenHex);
+
+  // Noise helper — value noise via hash
+  function hash(x, y) {
+    let n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
+    return n - Math.floor(n);
+  }
+  function valueNoise(x, y) {
+    const ix = Math.floor(x), iy = Math.floor(y);
+    const fx = x - ix, fy = y - iy;
+    const ux = fx*fx*(3-2*fx), uy = fy*fy*(3-2*fy);
+    return hash(ix,iy)*(1-ux)*(1-uy) + hash(ix+1,iy)*ux*(1-uy)
+         + hash(ix,iy+1)*(1-ux)*uy   + hash(ix+1,iy+1)*ux*uy;
+  }
+  function fbmNoise(x, y, oct) {
+    let v=0, a=1, f=1, t=0;
+    for(let i=0;i<oct;i++){v+=valueNoise(x*f,y*f)*a;t+=a;a*=0.5;f*=2.1;}
+    return v/t;
+  }
+
+  // Nap direction field — smoothly varying across surface with gentle curl
+  // This simulates how velvet pile is brushed in slightly different directions
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      // Local nap angle — varies with low-frequency noise
+      const napAngle = (fbmNoise(x*0.008, y*0.008, 3) - 0.5) * Math.PI * 0.6
+                     + Math.PI * 0.25; // base 45° diagonal nap
+      const napDx = Math.cos(napAngle);
+      const napDy = Math.sin(napAngle);
+
+      // Light direction (from upper-left)
+      const lx = 0.577, ly = -0.577, lz = 0.577;
+
+      // Microfibre normal perturbation from high-frequency noise
+      const grain = fbmNoise(x*0.4, y*0.4, 4);
+      const fibreWiggle = (grain - 0.5) * 0.3;
+
+      // Anisotropic highlight: bright when view aligns perpendicular to nap
+      const perpAngle = napAngle + Math.PI * 0.5 + fibreWiggle;
+      const perpDx = Math.cos(perpAngle);
+      const perpDy = Math.sin(perpAngle);
+
+      // Schlick-like sheen: bright at grazing, dark along nap
+      const dotL = lx * perpDx + ly * perpDy;
+      const sheen = Math.pow(Math.max(0, dotL * 0.5 + 0.5), 2.5);
+
+      // Depth shadow: fibres self-shadow creating dark micro-valleys
+      const shadow = fbmNoise(x*0.25 + napDx*0.5, y*0.25 + napDy*0.5, 3);
+      const selfShadow = Math.pow(shadow, 0.7) * 0.5 + 0.5;
+
+      // Broad velvet zones — lighter/darker regions from pile compression
+      const zone = fbmNoise(x*0.004, y*0.004, 2);
+      const zoneBright = zone * 0.4 + 0.8; // 0.8 – 1.2
+
+      // Combine
+      const brightness = sheen * 0.7 + selfShadow * 0.3;
+      const finalBright = brightness * zoneBright;
+
+      const alpha = Math.min(255, Math.round(finalBright * 180));
+      const ir = Math.min(255, Math.round(sr * finalBright * 1.2));
+      const ig = Math.min(255, Math.round(sg * finalBright * 1.2));
+      const ib = Math.min(255, Math.round(sb * finalBright * 1.2));
+
+      const idx = (y * w + x) * 4;
+      img.data[idx]   = ir;
+      img.data[idx+1] = ig;
+      img.data[idx+2] = ib;
+      img.data[idx+3] = alpha;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  return c.toDataURL();
+}
+
+// Slate — full pixel-level geology: cleavage planes, crystal grain, specular glints
+// Slate — diagonal shear planes with bright mineral veins, matching real slate.
+// No Voronoi dots or horizontal cracks. The key features from the photo are:
+// long diagonal bands (upper-left to lower-right), lighter mineral intrusion
+// veins running along those bands, and fine surface grain throughout.
+function genSlateTexture(midHex, lightHex, w=512, h=512) {
+  const c = makeCanvas(w, h);
+  const ctx = c.getContext('2d');
+  const img = ctx.createImageData(w, h);
   const [mr,mg,mb] = hexToRgb(midHex);
   const [lr,lg,lb] = hexToRgb(lightHex);
-  let y = 0;
-  while (y < h) {
-    const layerH = 8 + Math.random()*28;
-    const useMid = Math.random() > 0.45;
-    const [cr,cg,cb] = useMid ? [mr,mg,mb] : [lr,lg,lb];
-    const a = 0.15 + Math.random()*0.25;
-    ctx.fillStyle = `rgba(${cr},${cg},${cb},${a})`;
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    for (let x2=0; x2<=w; x2+=16) ctx.lineTo(x2, y+(Math.random()-0.5)*3);
-    ctx.lineTo(w, y+layerH);
-    for (let x2=w; x2>=0; x2-=16) ctx.lineTo(x2, y+layerH+(Math.random()-0.5)*2);
-    ctx.closePath(); ctx.fill();
-    y += layerH;
+
+  function hash(x, y) { let n=Math.sin(x*127.1+y*311.7)*43758.5453; return n-Math.floor(n); }
+  function valueNoise(x, y) {
+    const ix=Math.floor(x),iy=Math.floor(y),fx=x-ix,fy=y-iy;
+    const ux=fx*fx*(3-2*fx),uy=fy*fy*(3-2*fy);
+    return hash(ix,iy)*(1-ux)*(1-uy)+hash(ix+1,iy)*ux*(1-uy)+hash(ix,iy+1)*(1-ux)*uy+hash(ix+1,iy+1)*ux*uy;
   }
-  // Fracture lines
-  for (let i = 0; i < 8; i++) {
-    const sx = Math.random()*w, sy = Math.random()*h;
-    ctx.strokeStyle = `rgba(255,255,255,${0.06+Math.random()*0.08})`;
-    ctx.lineWidth = 0.5 + Math.random();
-    ctx.beginPath(); ctx.moveTo(sx, sy);
-    let cx2=sx, cy2=sy;
-    for (let s=0; s<6; s++) {
-      cx2 += (Math.random()-0.5)*40; cy2 += 10+Math.random()*20;
-      ctx.lineTo(cx2, cy2);
+  function fbm(x, y, oct) {
+    let v=0,a=1,f=1,t=0;
+    for(let i=0;i<oct;i++){v+=valueNoise(x*f,y*f)*a;t+=a;a*=0.55;f*=2.0;}
+    return v/t;
+  }
+
+  // Slate shear angle — roughly 135° (upper-left to lower-right diagonal)
+  // We work in a rotated coordinate space aligned to the shear direction
+  const shearAngle = Math.PI * 0.72; // ~130°
+  const cos_a = Math.cos(shearAngle), sin_a = Math.sin(shearAngle);
+
+  // Raking light from upper-left, almost grazing — maximises texture contrast
+  const lx = 0.5, ly = -0.7, lz = 0.51;
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      // Rotate into shear-plane space
+      const su =  x * cos_a + y * sin_a;  // along shear planes
+      const sv = -x * sin_a + y * cos_a;  // across shear planes
+
+      // Primary shear banding — low frequency across the planes (sv direction)
+      // Multiple overlapping bands at slightly different frequencies give realism
+      const warp = fbm(su*0.003, sv*0.003, 3) * 60; // domain warp to make bands wavy
+      const band1 = fbm((sv + warp) * 0.012, su*0.002, 5);
+      const band2 = fbm((sv + warp*0.6) * 0.007 + 10.3, su*0.001 + 5.1, 4);
+      const bandVal = band1 * 0.6 + band2 * 0.4;
+
+      // Fine surface grain — high frequency, isotropic
+      const grain = fbm(x*0.22, y*0.22, 4);
+
+      // Mineral veins — bright thin lines running along the shear direction
+      // These are the white/light lines visible in real slate
+      // Model as sharp peaks in a warped sine field
+      const veinWarp = fbm(su*0.008 + 2.1, sv*0.008, 3) * 40;
+      const veinPhase = (sv + veinWarp) * 0.028;
+      // Multiple vein frequencies — some are wider mineral intrusions
+      const vein1 = Math.pow(Math.max(0, Math.sin(veinPhase * 1.0 + 0.3)), 8);
+      const vein2 = Math.pow(Math.max(0, Math.sin(veinPhase * 2.3 + 1.7)), 12);
+      const vein3 = Math.pow(Math.max(0, Math.sin(veinPhase * 0.5 + 4.1)), 6) * 0.5;
+      const veinTotal = vein1 * 0.5 + vein2 * 0.35 + vein3 * 0.15;
+      // Modulate vein brightness by position along shear (veins aren't uniform)
+      const veinMod = fbm(su*0.006, sv*0.002+20, 3) * 0.7 + 0.3;
+      const vein = veinTotal * veinMod;
+
+      // Surface normal from banding + grain for lighting
+      const eps = 1.5;
+      const bx = fbm((sv+warp+eps)*0.012, su*0.002, 4) - fbm((sv+warp-eps)*0.012, su*0.002, 4);
+      const by = fbm((sv+warp)*0.012, (su+eps)*0.002, 4) - fbm((sv+warp)*0.012, (su-eps)*0.002, 4);
+      const nlen = Math.sqrt(bx*bx + by*by + 0.08);
+      const nx = -bx/nlen * 1.5, ny = by/nlen * 1.5, nz = 0.28/nlen;
+
+      // Diffuse lighting
+      const diffuse = Math.max(0.15, nx*lx + ny*ly + nz*lz);
+      // Sharp specular for wet/polished slate look
+      const spec = Math.pow(Math.max(0, diffuse), 22) * 0.4;
+
+      // Dark zones — slightly recessed areas between shear planes
+      const shadow = Math.pow(1 - bandVal, 2.5) * 0.35;
+
+      // Combine: base colour varies between mid and light by banding
+      const t = bandVal * 0.6 + grain * 0.25 + vein * 0.15;
+      const baseR = mr + (lr-mr) * t;
+      const baseG = mg + (lg-mg) * t;
+      const baseB = mb + (lb-mb) * t;
+
+      const lit = diffuse * (1 - shadow);
+
+      // Vein colour: bright near-white with slight warm tint
+      const veinR = Math.round(Math.min(255, baseR*(1-vein*0.7) + 230*vein*0.7 + spec*180));
+      const veinG = Math.round(Math.min(255, baseG*(1-vein*0.7) + 228*vein*0.7 + spec*185));
+      const veinB = Math.round(Math.min(255, baseB*(1-vein*0.7) + 235*vein*0.7 + spec*200));
+
+      const ir = Math.min(255, Math.max(0, Math.round(veinR * lit)));
+      const ig = Math.min(255, Math.max(0, Math.round(veinG * lit)));
+      const ib = Math.min(255, Math.max(0, Math.round(veinB * lit)));
+      const alpha = Math.min(255, Math.round((t * 0.7 + vein * 0.5 + grain * 0.2) * 255));
+
+      const i = (y*w+x)*4;
+      img.data[i]   = ir;
+      img.data[i+1] = ig;
+      img.data[i+2] = ib;
+      img.data[i+3] = alpha;
     }
-    ctx.stroke();
   }
+  ctx.putImageData(img, 0, 0);
   return c.toDataURL();
 }
 
-// Velvet — diagonal nap + sheen, transparent overlay
-function genVelvetTexture(sheenHex, w=256, h=256) {
-  const c = makeCanvas(w, h);
-  const ctx = c.getContext('2d');
-  ctx.clearRect(0,0,w,h);
-  const [sr,sg,sb] = hexToRgb(sheenHex);
-  for (let i = 0; i < 500; i++) {
-    const x = Math.random()*w, y = Math.random()*h;
-    const len = 3 + Math.random()*10;
-    const a = 0.03 + Math.random()*0.1;
-    ctx.strokeStyle = `rgba(${sr},${sg},${sb},${a})`;
-    ctx.lineWidth = 0.5 + Math.random()*0.8;
-    ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+len*0.7, y+len); ctx.stroke();
-  }
-  // Broad sheen sweeps
-  for (let i = 0; i < 5; i++) {
-    const x = Math.random()*w;
-    const grd = ctx.createLinearGradient(x-40,0,x+40,h);
-    grd.addColorStop(0, `rgba(${sr},${sg},${sb},0)`);
-    grd.addColorStop(0.5, `rgba(${sr},${sg},${sb},0.09)`);
-    grd.addColorStop(1, `rgba(${sr},${sg},${sb},0)`);
-    ctx.fillStyle = grd;
-    ctx.fillRect(0,0,w,h);
-  }
-  return c.toDataURL();
-}
-
-// Parchment — fibres + foxing, transparent overlay
+// Parchment — smooth aged paper: directional fibre flow, subtle tone variation,
+// light edge darkening. No spots or foxing — just the feel of old vellum.
 function genParchmentTexture(darkHex, w=512, h=512) {
   const c = makeCanvas(w, h);
   const ctx = c.getContext('2d');
-  ctx.clearRect(0,0,w,h);
+  const img = ctx.createImageData(w, h);
   const [dr,dg,db] = hexToRgb(darkHex);
-  // Aged paper fibres
-  for (let i = 0; i < 900; i++) {
-    const x = Math.random()*w, y = Math.random()*h;
-    const len = 2 + Math.random()*18;
-    const angle = Math.random()*Math.PI;
-    const a = 0.03 + Math.random()*0.09;
-    ctx.strokeStyle = `rgba(${dr},${dg},${db},${a})`;
-    ctx.lineWidth = 0.3 + Math.random()*0.7;
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(x+Math.cos(angle)*len, y+Math.sin(angle)*len);
-    ctx.stroke();
+
+  function hash(x, y) { let n=Math.sin(x*127.1+y*311.7)*43758.5453; return n-Math.floor(n); }
+  function valueNoise(x, y) {
+    const ix=Math.floor(x),iy=Math.floor(y),fx=x-ix,fy=y-iy;
+    const ux=fx*fx*(3-2*fx),uy=fy*fy*(3-2*fy);
+    return hash(ix,iy)*(1-ux)*(1-uy)+hash(ix+1,iy)*ux*(1-uy)+hash(ix,iy+1)*(1-ux)*uy+hash(ix+1,iy+1)*ux*uy;
   }
-  // Foxing spots
-  for (let i = 0; i < 50; i++) {
-    const x = Math.random()*w, y = Math.random()*h;
-    const r = 1 + Math.random()*5;
-    ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2);
-    ctx.fillStyle = `rgba(${dr},${dg},${db},${0.07+Math.random()*0.18})`;
-    ctx.fill();
+  function fbm(x, y, oct) {
+    let v=0,a=1,f=1,t=0;
+    for(let i=0;i<oct;i++){v+=valueNoise(x*f,y*f)*a;t+=a;a*=0.5;f*=2.1;}
+    return v/t;
   }
-  // Edge vignette
-  const grd = ctx.createRadialGradient(w/2,h/2,w*0.25,w/2,h/2,w*0.75);
-  grd.addColorStop(0, 'rgba(0,0,0,0)');
-  grd.addColorStop(1, `rgba(${dr},${dg},${db},0.3)`);
-  ctx.fillStyle = grd;
-  ctx.fillRect(0,0,w,h);
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      // Broad tonal variation — the warm/cool patches of aged vellum
+      const tone = fbm(x*0.005, y*0.005, 3);
+
+      // Paper fibre direction — horizontal with gentle undulation
+      const flowWarp = fbm(x*0.015, y*0.015, 3) * 30;
+      const fibreU = x * 0.7 + flowWarp;
+      const fibreV = y * 0.08;
+      // Anisotropic fibre noise: much lower frequency in flow direction
+      const fibre = fbm(fibreU * 0.04, fibreV * 0.4, 4);
+
+      // Fine surface tooth — the micro-roughness of laid paper
+      const tooth = fbm(x*0.45, y*0.45, 3) * 0.15;
+
+      // Combine into brightness variation
+      const surface = tone * 0.5 + fibre * 0.35 + tooth;
+
+      // Edge vignette — computed per-pixel, smooth
+      const ex = (x / w - 0.5) * 2;
+      const ey = (y / h - 0.5) * 2;
+      const edgeDist = Math.max(0, ex*ex + ey*ey - 0.2);
+      const vignette = edgeDist * 0.35;
+
+      const bright = surface - vignette;
+
+      // Slightly darken/warm towards the dark ink colour in shadows
+      const alpha = Math.min(255, Math.round(Math.abs(bright - 0.5) * 180));
+      const sign = bright > 0.5 ? 1 : -1;
+      const r = sign > 0 ? 255 : dr;
+      const g = sign > 0 ? 245 : dg;
+      const b = sign > 0 ? 220 : db;
+
+      const i = (y*w+x)*4;
+      img.data[i]   = r;
+      img.data[i+1] = g;
+      img.data[i+2] = b;
+      img.data[i+3] = alpha;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
   return c.toDataURL();
 }
 
-// Ocean caustics — transparent pixel overlay
+// Ocean — domain-warped caustic light patterns. The key is using fBm to warp
+// the domain before evaluating the caustic sines, breaking any geometric regularity.
 function genOceanTexture(causticHex, w=512, h=512) {
   const c = makeCanvas(w, h);
   const ctx = c.getContext('2d');
   const img = ctx.createImageData(w, h);
   const [cr,cg,cb] = hexToRgb(causticHex);
+
+  function hash(x, y) { let n=Math.sin(x*127.1+y*311.7)*43758.5453; return n-Math.floor(n); }
+  function valueNoise(x, y) {
+    const ix=Math.floor(x),iy=Math.floor(y),fx=x-ix,fy=y-iy;
+    const ux=fx*fx*(3-2*fx),uy=fy*fy*(3-2*fy);
+    return hash(ix,iy)*(1-ux)*(1-uy)+hash(ix+1,iy)*ux*(1-uy)+hash(ix,iy+1)*(1-ux)*uy+hash(ix+1,iy+1)*ux*uy;
+  }
+  function fbm(x, y, oct) {
+    let v=0,a=1,f=1,t=0;
+    for(let i=0;i<oct;i++){v+=valueNoise(x*f,y*f)*a;t+=a;a*=0.5;f*=2.1;}
+    return v/t;
+  }
+
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
-      const a2 = Math.sin(x*0.04+y*0.03)*0.5+0.5;
-      const b2 = Math.sin(x*0.07-y*0.05+2.1)*0.5+0.5;
-      const cc = Math.sin(x*0.02+y*0.08+4.5)*0.5+0.5;
-      const dd = Math.sin(-x*0.05+y*0.04+1.8)*0.5+0.5;
-      const bright = Math.pow(a2*b2*cc*dd, 0.4);
-      const alpha = Math.round(bright * 180); // transparent where no caustic
-      const idx = (y*w+x)*4;
-      img.data[idx]   = cr;
-      img.data[idx+1] = cg;
-      img.data[idx+2] = cb;
-      img.data[idx+3] = alpha;
+      // Two-pass domain warp — warp the warp — gives fully organic, non-repeating patterns
+      // First warp
+      const wx1 = fbm(x*0.008,       y*0.008,       4) * 45;
+      const wy1 = fbm(x*0.008 + 3.7, y*0.008 + 5.2, 4) * 45;
+      // Second warp using already-warped coordinates
+      const wx2 = fbm((x+wx1)*0.006,       (y+wy1)*0.006,       3) * 35;
+      const wy2 = fbm((x+wx1)*0.006 + 8.1, (y+wy1)*0.006 + 2.4, 3) * 35;
+
+      const wx = x + wx1 + wx2;
+      const wy = y + wy1 + wy2;
+
+      // Caustic pattern evaluated in warped space — multiple frequencies
+      // Multiply rather than add for sharp bright focal spots like real caustics
+      const c1 = Math.sin(wx * 0.032 + wy * 0.024) * 0.5 + 0.5;
+      const c2 = Math.sin(wx * 0.051 - wy * 0.038 + 2.1) * 0.5 + 0.5;
+      const c3 = Math.sin(-wx * 0.027 + wy * 0.059 + 4.6) * 0.5 + 0.5;
+      const c4 = Math.sin(wx * 0.019 + wy * 0.071 + 1.3) * 0.5 + 0.5;
+
+      // Caustic: product of waves gives sparse, bright focal points
+      const caustic = Math.pow(c1 * c2 * c3 * c4, 0.55);
+
+      // Depth variation — large-scale dark/light patches like depth variation
+      const depth = fbm(x*0.004, y*0.006, 3) * 0.35 + 0.65;
+
+      // Subsurface scatter — blue-green glow in brightest caustic zones
+      const scatter = Math.pow(Math.max(0, caustic - 0.6), 2) * 4.0;
+
+      // Specular surface sparkle — tiny, very bright
+      const sparkSeed = hash(Math.floor(x*0.8)*1.3 + 0.7, Math.floor(y*0.8)*1.7 + 0.3);
+      const spark = sparkSeed > 0.994 ? (sparkSeed - 0.994) / 0.006 * 2.0 : 0;
+
+      const totalBright = caustic * depth + scatter * 0.5 + spark * 0.6;
+
+      // Caustic colour: cyan-white in bright spots, pure colour in mid, transparent in dark
+      const rr = Math.min(255, Math.round((cr * caustic * 0.8 + 220 * scatter * 0.15 + 255 * spark * 0.4) * depth));
+      const rg = Math.min(255, Math.round((cg * caustic * 0.8 + 240 * scatter * 0.35 + 255 * spark * 0.6) * depth));
+      const rb = Math.min(255, Math.round((cb * caustic * 0.8 + 255 * scatter * 0.55 + 255 * spark) * depth));
+      const alpha = Math.min(255, Math.round(totalBright * 210));
+
+      const i = (y*w+x)*4;
+      img.data[i]   = rr;
+      img.data[i+1] = rg;
+      img.data[i+2] = rb;
+      img.data[i+3] = alpha;
     }
   }
   ctx.putImageData(img, 0, 0);
@@ -2384,19 +2628,6 @@ function genForgeTexture(glowHex, w=512, h=512) {
   return c.toDataURL();
 }
 
-// Pre-generate all tray textures once at startup
-const TRAY_TEXTURES = {};
-function initTrayTextures() {
-  TRAY_TEXTURES['green-felt']      = genFeltTexture('#2a6b50');
-  TRAY_TEXTURES['mahogany']        = genWoodTexture('#0a0200','#c87840');
-  TRAY_TEXTURES['midnight-velvet'] = genVelvetTexture('#c0a8ff');
-  TRAY_TEXTURES['parchment']       = genParchmentTexture('#6a3010');
-  TRAY_TEXTURES['slate-stone']     = genSlateTexture('#4a5a68','#8aa0b0');
-  TRAY_TEXTURES['deep-ocean']      = genOceanTexture('#40b8e0');
-  TRAY_TEXTURES['ember-forge']     = genForgeTexture('#ff6020');
-  TRAY_TEXTURES['ivory-marble']    = genMarbleTexture('#8090b8','#4a5080');
-}
-
 /* =========================================================================
    BACKGROUND CANVAS GENERATORS
    Coarser / wider-scale versions of each tray texture, painted onto a
@@ -2405,38 +2636,37 @@ function initTrayTextures() {
    different angle/pattern so they're clearly distinct.
    ========================================================================= */
 
-// Coarse felt — wider thread spacing, lower contrast than tray felt
+// Bg felt — same pixel fuzz approach as tray but lower frequency (larger-scale nap zones)
 function genBgFelt(col1Hex, col2Hex, w, h) {
   const c = makeCanvas(w, h);
   const ctx = c.getContext('2d');
-  ctx.clearRect(0, 0, w, h);
-  // Wider warp threads
-  for (let x = 0; x < w; x += 4) {
-    const bright = Math.random() > 0.5;
-    const a = 0.015 + Math.random() * 0.035;
-    ctx.strokeStyle = bright ? `rgba(255,255,255,${a})` : `rgba(0,0,0,${a * 0.8})`;
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(x + (Math.random() - 0.5) * 2, 0);
-    ctx.lineTo(x + (Math.random() - 0.5) * 2, h);
-    ctx.stroke();
-  }
-  // Wider weft threads
-  for (let y = 0; y < h; y += 4) {
-    const bright = Math.random() > 0.5;
-    const a = 0.012 + Math.random() * 0.025;
-    ctx.strokeStyle = bright ? `rgba(255,255,255,${a})` : `rgba(0,0,0,${a * 0.8})`;
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(0, y + (Math.random() - 0.5) * 2);
-    ctx.lineTo(w, y + (Math.random() - 0.5) * 2);
-    ctx.stroke();
-  }
-  // Sparse shimmer
-  for (let i = 0; i < w * h * 0.003; i++) {
-    ctx.fillStyle = `rgba(255,255,255,${Math.random() * 0.04})`;
-    ctx.fillRect(Math.random() * w, Math.random() * h, 1, 1);
-  }
+  const img = ctx.createImageData(w, h);
+  const [lr,lg,lb] = hexToRgb(col1Hex);
+  function hash(x,y){let n=Math.sin(x*127.1+y*311.7)*43758.5453;return n-Math.floor(n);}
+  function vn(x,y){const ix=Math.floor(x),iy=Math.floor(y),fx=x-ix,fy=y-iy,ux=fx*fx*(3-2*fx),uy=fy*fy*(3-2*fy);return hash(ix,iy)*(1-ux)*(1-uy)+hash(ix+1,iy)*ux*(1-uy)+hash(ix,iy+1)*(1-ux)*uy+hash(ix+1,iy+1)*ux*uy;}
+  function fbm(x,y,o){let v=0,a=1,f=1,t=0;for(let i=0;i<o;i++){v+=vn(x*f,y*f)*a;t+=a;a*=0.5;f*=2.1;}return v/t;}
+  for(let y=0;y<h;y++){for(let x=0;x<w;x++){
+    // Half the spatial frequency of tray — coarser nap zones
+    const density=fbm(x*0.03,y*0.03,4);
+    const a1=Math.PI*0.15, a2=Math.PI*0.55, a3=Math.PI*0.82;
+    const rx1=x*Math.cos(a1)+y*Math.sin(a1), ry1=-x*Math.sin(a1)+y*Math.cos(a1);
+    const rx2=x*Math.cos(a2)+y*Math.sin(a2), ry2=-x*Math.sin(a2)+y*Math.cos(a2);
+    const rx3=x*Math.cos(a3)+y*Math.sin(a3), ry3=-x*Math.sin(a3)+y*Math.cos(a3);
+    const d1=fbm(rx1*0.25,ry1*0.06,3);
+    const d2=fbm(rx2*0.25,ry2*0.06,3);
+    const d3=fbm(rx3*0.25,ry3*0.06,3);
+    const fuzz=(d1*0.4+d2*0.35+d3*0.25)*density;
+    const sheen=Math.pow(fbm(x*0.9,y*0.9,2),6)*0.4;
+    const zone=fbm(x*0.004,y*0.004,3)*0.25+0.85;
+    const bright=(fuzz*0.75+sheen)*zone;
+    const aboveMid=bright-0.5;
+    let r,g,b,alpha;
+    if(aboveMid>0){r=Math.round(lr+(255-lr)*aboveMid*0.35);g=Math.round(lg+(255-lg)*aboveMid*0.35);b=Math.round(lb+(255-lb)*aboveMid*0.35);alpha=Math.round(aboveMid*180);}
+    else{r=0;g=0;b=0;alpha=Math.round(-aboveMid*100);}
+    const i=(y*w+x)*4;
+    img.data[i]=Math.min(255,Math.max(0,r));img.data[i+1]=Math.min(255,Math.max(0,g));img.data[i+2]=Math.min(255,Math.max(0,b));img.data[i+3]=Math.min(255,Math.max(0,alpha));
+  }}
+  ctx.putImageData(img,0,0);
   return c;
 }
 
@@ -2510,200 +2740,208 @@ function genBgMarble(vein1Hex, vein2Hex, w, h) {
   return c;
 }
 
-// Coarse slate — thicker strata, fewer cracks, wider layers
-function genBgSlate(midHex, lightHex, w, h) {
-  const c = makeCanvas(w, h);
-  const ctx = c.getContext('2d');
-  ctx.clearRect(0, 0, w, h);
-  const [mr, mg, mb] = hexToRgb(midHex);
-  const [lr, lg, lb] = hexToRgb(lightHex);
-  let y = 0;
-  while (y < h) {
-    const layerH = 18 + Math.random() * 50; // wider than tray
-    const useMid = Math.random() > 0.45;
-    const [cr, cg, cb] = useMid ? [mr, mg, mb] : [lr, lg, lb];
-    const a = 0.08 + Math.random() * 0.15;
-    ctx.fillStyle = `rgba(${cr},${cg},${cb},${a})`;
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    for (let x2 = 0; x2 <= w; x2 += 32) ctx.lineTo(x2, y + (Math.random() - 0.5) * 5);
-    ctx.lineTo(w, y + layerH);
-    for (let x2 = w; x2 >= 0; x2 -= 32) ctx.lineTo(x2, y + layerH + (Math.random() - 0.5) * 3);
-    ctx.closePath(); ctx.fill();
-    y += layerH;
-  }
-  // Fewer, longer fractures
-  for (let i = 0; i < 5; i++) {
-    const sx = Math.random() * w, sy = Math.random() * h;
-    ctx.strokeStyle = `rgba(255,255,255,${0.04 + Math.random() * 0.05})`;
-    ctx.lineWidth = 0.8 + Math.random();
-    ctx.beginPath(); ctx.moveTo(sx, sy);
-    let cx2 = sx, cy2 = sy;
-    for (let s = 0; s < 8; s++) {
-      cx2 += (Math.random() - 0.5) * 60; cy2 += 15 + Math.random() * 30;
-      ctx.lineTo(cx2, cy2);
-    }
-    ctx.stroke();
-  }
-  return c;
-}
-
-// Coarse velvet — larger nap sweeps, broader sheen bands
+// Bg velvet — anisotropic pixel-level, larger scale than tray
 function genBgVelvet(sheenHex, w, h) {
   const c = makeCanvas(w, h);
   const ctx = c.getContext('2d');
-  ctx.clearRect(0, 0, w, h);
-  const [sr, sg, sb] = hexToRgb(sheenHex);
-  for (let i = 0; i < 300; i++) {
-    const x = Math.random() * w, y = Math.random() * h;
-    const len = 6 + Math.random() * 18;
-    const a = 0.02 + Math.random() * 0.07;
-    ctx.strokeStyle = `rgba(${sr},${sg},${sb},${a})`;
-    ctx.lineWidth = 0.8 + Math.random() * 1.2;
-    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + len * 0.6, y + len); ctx.stroke();
-  }
-  // Broad diagonal sheen bands across the whole surface
-  for (let i = 0; i < 4; i++) {
-    const x = Math.random() * w;
-    const grd = ctx.createLinearGradient(x - 80, 0, x + 80, h);
-    grd.addColorStop(0, `rgba(${sr},${sg},${sb},0)`);
-    grd.addColorStop(0.5, `rgba(${sr},${sg},${sb},0.07)`);
-    grd.addColorStop(1, `rgba(${sr},${sg},${sb},0)`);
-    ctx.fillStyle = grd;
-    ctx.fillRect(0, 0, w, h);
-  }
+  const img = ctx.createImageData(w, h);
+  const [sr,sg,sb] = hexToRgb(sheenHex);
+  function hash(x,y){let n=Math.sin(x*127.1+y*311.7)*43758.5453;return n-Math.floor(n);}
+  function vn(x,y){const ix=Math.floor(x),iy=Math.floor(y),fx=x-ix,fy=y-iy,ux=fx*fx*(3-2*fx),uy=fy*fy*(3-2*fy);return hash(ix,iy)*(1-ux)*(1-uy)+hash(ix+1,iy)*ux*(1-uy)+hash(ix,iy+1)*(1-ux)*uy+hash(ix+1,iy+1)*ux*uy;}
+  function fbm(x,y,o){let v=0,a=1,f=1,t=0;for(let i=0;i<o;i++){v+=vn(x*f,y*f)*a;t+=a;a*=0.5;f*=2.1;}return v/t;}
+  for(let y=0;y<h;y++){for(let x=0;x<w;x++){
+    const napAngle=(fbm(x*0.004,y*0.004,3)-0.5)*Math.PI*0.5+Math.PI*0.3;
+    const lx=0.577,ly=-0.577;
+    const grain=fbm(x*0.2,y*0.2,3);
+    const fw=(grain-0.5)*0.25;
+    const pa=napAngle+Math.PI*0.5+fw;
+    const dotL=lx*Math.cos(pa)+ly*Math.sin(pa);
+    const sheen=Math.pow(Math.max(0,dotL*0.5+0.5),2.2);
+    const shadow=fbm(x*0.15,y*0.15,3);
+    const ss=Math.pow(shadow,0.7)*0.5+0.5;
+    const zone=fbm(x*0.002,y*0.002,2)*0.4+0.8;
+    const b=(sheen*0.7+ss*0.3)*zone;
+    const i=(y*w+x)*4;
+    img.data[i]=Math.min(255,Math.round(sr*b*1.2));
+    img.data[i+1]=Math.min(255,Math.round(sg*b*1.2));
+    img.data[i+2]=Math.min(255,Math.round(sb*b*1.2));
+    img.data[i+3]=Math.min(255,Math.round(b*160));
+  }}
+  ctx.putImageData(img,0,0);
   return c;
 }
 
-// Coarse parchment — fewer but longer fibres, bolder foxing
+// Bg slate — same diagonal shear-plane approach at lower frequency (wider bands)
+function genBgSlate(midHex, lightHex, w, h) {
+  const c = makeCanvas(w, h);
+  const ctx = c.getContext('2d');
+  const img = ctx.createImageData(w, h);
+  const [mr,mg,mb]=hexToRgb(midHex);
+  const [lr,lg,lb]=hexToRgb(lightHex);
+  function hash(x,y){let n=Math.sin(x*127.1+y*311.7)*43758.5453;return n-Math.floor(n);}
+  function vn(x,y){const ix=Math.floor(x),iy=Math.floor(y),fx=x-ix,fy=y-iy,ux=fx*fx*(3-2*fx),uy=fy*fy*(3-2*fy);return hash(ix,iy)*(1-ux)*(1-uy)+hash(ix+1,iy)*ux*(1-uy)+hash(ix,iy+1)*(1-ux)*uy+hash(ix+1,iy+1)*ux*uy;}
+  function fbm(x,y,o){let v=0,a=1,f=1,t=0;for(let i=0;i<o;i++){v+=vn(x*f,y*f)*a;t+=a;a*=0.55;f*=2.0;}return v/t;}
+  const cos_a=Math.cos(Math.PI*0.72), sin_a=Math.sin(Math.PI*0.72);
+  const lx=0.5,ly=-0.7,lz=0.51;
+  for(let y=0;y<h;y++){for(let x=0;x<w;x++){
+    // Lower frequency — wider shear bands for background scale
+    const su=x*cos_a+y*sin_a, sv=-x*sin_a+y*cos_a;
+    const warp=fbm(su*0.0015,sv*0.0015,3)*80;
+    const band1=fbm((sv+warp)*0.006,su*0.001,4);
+    const band2=fbm((sv+warp*0.6)*0.0035+10.3,su*0.0005+5.1,3);
+    const bandVal=band1*0.6+band2*0.4;
+    const grain=fbm(x*0.11,y*0.11,3);
+    const veinWarp=fbm(su*0.004+2.1,sv*0.004,3)*55;
+    const veinPhase=(sv+veinWarp)*0.014;
+    const vein1=Math.pow(Math.max(0,Math.sin(veinPhase+0.3)),8);
+    const vein2=Math.pow(Math.max(0,Math.sin(veinPhase*2.3+1.7)),12);
+    const vein3=Math.pow(Math.max(0,Math.sin(veinPhase*0.5+4.1)),6)*0.5;
+    const veinMod=fbm(su*0.003,sv*0.001+20,3)*0.7+0.3;
+    const vein=(vein1*0.5+vein2*0.35+vein3*0.15)*veinMod;
+    const eps=2;
+    const bx=fbm((sv+warp+eps)*0.006,su*0.001,3)-fbm((sv+warp-eps)*0.006,su*0.001,3);
+    const by=fbm((sv+warp)*0.006,(su+eps)*0.001,3)-fbm((sv+warp)*0.006,(su-eps)*0.001,3);
+    const nl=Math.sqrt(bx*bx+by*by+0.08);
+    const nx=-bx/nl*1.5,ny=by/nl*1.5,nz=0.28/nl;
+    const diffuse=Math.max(0.15,nx*lx+ny*ly+nz*lz);
+    const spec=Math.pow(Math.max(0,diffuse),22)*0.4;
+    const shadow=Math.pow(1-bandVal,2.5)*0.35;
+    const t=bandVal*0.6+grain*0.25+vein*0.15;
+    const baseR=mr+(lr-mr)*t, baseG=mg+(lg-mg)*t, baseB=mb+(lb-mb)*t;
+    const lit=diffuse*(1-shadow);
+    const veinR=Math.min(255,baseR*(1-vein*0.7)+230*vein*0.7+spec*180);
+    const veinG=Math.min(255,baseG*(1-vein*0.7)+228*vein*0.7+spec*185);
+    const veinB=Math.min(255,baseB*(1-vein*0.7)+235*vein*0.7+spec*200);
+    const i=(y*w+x)*4;
+    img.data[i]=Math.min(255,Math.max(0,Math.round(veinR*lit)));
+    img.data[i+1]=Math.min(255,Math.max(0,Math.round(veinG*lit)));
+    img.data[i+2]=Math.min(255,Math.max(0,Math.round(veinB*lit)));
+    img.data[i+3]=Math.min(255,Math.round((t*0.7+vein*0.5+grain*0.2)*255));
+  }}
+  ctx.putImageData(img,0,0);
+  return c;
+}
+
+// Bg parchment — same smooth fibre-flow approach, lower frequency than tray
 function genBgParchment(darkHex, w, h) {
   const c = makeCanvas(w, h);
   const ctx = c.getContext('2d');
-  ctx.clearRect(0, 0, w, h);
-  const [dr, dg, db] = hexToRgb(darkHex);
-  for (let i = 0; i < 500; i++) {
-    const x = Math.random() * w, y = Math.random() * h;
-    const len = 4 + Math.random() * 30;
-    const angle = Math.random() * Math.PI;
-    const a = 0.02 + Math.random() * 0.07;
-    ctx.strokeStyle = `rgba(${dr},${dg},${db},${a})`;
-    ctx.lineWidth = 0.4 + Math.random() * 1.0;
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(x + Math.cos(angle) * len, y + Math.sin(angle) * len);
-    ctx.stroke();
-  }
-  // Bolder foxing
-  for (let i = 0; i < 35; i++) {
-    const x = Math.random() * w, y = Math.random() * h;
-    const r = 2 + Math.random() * 8;
-    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(${dr},${dg},${db},${0.05 + Math.random() * 0.13})`;
-    ctx.fill();
-  }
-  // Stronger edge vignette
-  const grd = ctx.createRadialGradient(w / 2, h / 2, w * 0.2, w / 2, h / 2, w * 0.75);
-  grd.addColorStop(0, 'rgba(0,0,0,0)');
-  grd.addColorStop(1, `rgba(${dr},${dg},${db},0.22)`);
-  ctx.fillStyle = grd;
-  ctx.fillRect(0, 0, w, h);
+  const img = ctx.createImageData(w, h);
+  const [dr,dg,db] = hexToRgb(darkHex);
+  function hash(x,y){let n=Math.sin(x*127.1+y*311.7)*43758.5453;return n-Math.floor(n);}
+  function vn(x,y){const ix=Math.floor(x),iy=Math.floor(y),fx=x-ix,fy=y-iy,ux=fx*fx*(3-2*fx),uy=fy*fy*(3-2*fy);return hash(ix,iy)*(1-ux)*(1-uy)+hash(ix+1,iy)*ux*(1-uy)+hash(ix,iy+1)*(1-ux)*uy+hash(ix+1,iy+1)*ux*uy;}
+  function fbm(x,y,o){let v=0,a=1,f=1,t=0;for(let i=0;i<o;i++){v+=vn(x*f,y*f)*a;t+=a;a*=0.5;f*=2.1;}return v/t;}
+  for(let y=0;y<h;y++){for(let x=0;x<w;x++){
+    const tone=fbm(x*0.0025,y*0.0025,3);
+    const flowWarp=fbm(x*0.0075,y*0.0075,3)*40;
+    const fibreU=x*0.7+flowWarp, fibreV=y*0.08;
+    const fibre=fbm(fibreU*0.02,fibreV*0.2,4);
+    const tooth=fbm(x*0.22,y*0.22,3)*0.12;
+    const surface=tone*0.5+fibre*0.35+tooth;
+    const ex=(x/w-0.5)*2, ey=(y/h-0.5)*2;
+    const vignette=Math.max(0,ex*ex+ey*ey-0.2)*0.3;
+    const bright=surface-vignette;
+    const alpha=Math.min(255,Math.round(Math.abs(bright-0.5)*160));
+    const sign=bright>0.5?1:-1;
+    const r=sign>0?255:dr, g=sign>0?245:dg, b=sign>0?220:db;
+    const i=(y*w+x)*4;
+    img.data[i]=r;img.data[i+1]=g;img.data[i+2]=b;img.data[i+3]=alpha;
+  }}
+  ctx.putImageData(img,0,0);
   return c;
 }
 
-// Coarse ocean — lower frequency caustics, more depth variation
+// Bg ocean — double-warped caustics at lower spatial frequency
 function genBgOcean(causticHex, w, h) {
   const c = makeCanvas(w, h);
   const ctx = c.getContext('2d');
   const img = ctx.createImageData(w, h);
-  const [cr, cg, cb] = hexToRgb(causticHex);
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      // Lower frequency than tray (0.02 vs 0.04)
-      const a2 = Math.sin(x * 0.02 + y * 0.015) * 0.5 + 0.5;
-      const b2 = Math.sin(x * 0.035 - y * 0.025 + 2.1) * 0.5 + 0.5;
-      const cc = Math.sin(x * 0.01 + y * 0.04 + 4.5) * 0.5 + 0.5;
-      const dd = Math.sin(-x * 0.025 + y * 0.02 + 1.8) * 0.5 + 0.5;
-      const bright = Math.pow(a2 * b2 * cc * dd, 0.4);
-      const alpha = Math.round(bright * 140);
-      const i = (y * w + x) * 4;
-      img.data[i] = cr; img.data[i + 1] = cg; img.data[i + 2] = cb; img.data[i + 3] = alpha;
-    }
-  }
-  ctx.putImageData(img, 0, 0);
+  const [cr,cg,cb]=hexToRgb(causticHex);
+  function hash(x,y){let n=Math.sin(x*127.1+y*311.7)*43758.5453;return n-Math.floor(n);}
+  function vn(x,y){const ix=Math.floor(x),iy=Math.floor(y),fx=x-ix,fy=y-iy,ux=fx*fx*(3-2*fx),uy=fy*fy*(3-2*fy);return hash(ix,iy)*(1-ux)*(1-uy)+hash(ix+1,iy)*ux*(1-uy)+hash(ix,iy+1)*(1-ux)*uy+hash(ix+1,iy+1)*ux*uy;}
+  function fbm(x,y,o){let v=0,a=1,f=1,t=0;for(let i=0;i<o;i++){v+=vn(x*f,y*f)*a;t+=a;a*=0.5;f*=2.1;}return v/t;}
+  for(let y=0;y<h;y++){for(let x=0;x<w;x++){
+    // Half the frequency of tray — larger caustic blobs on background
+    const wx1=fbm(x*0.004,y*0.004,4)*55, wy1=fbm(x*0.004+3.7,y*0.004+5.2,4)*55;
+    const wx2=fbm((x+wx1)*0.003,(y+wy1)*0.003,3)*40, wy2=fbm((x+wx1)*0.003+8.1,(y+wy1)*0.003+2.4,3)*40;
+    const wx=x+wx1+wx2, wy=y+wy1+wy2;
+    const c1=Math.sin(wx*0.016+wy*0.012)*0.5+0.5;
+    const c2=Math.sin(wx*0.025-wy*0.019+2.1)*0.5+0.5;
+    const c3=Math.sin(-wx*0.013+wy*0.030+4.6)*0.5+0.5;
+    const c4=Math.sin(wx*0.009+wy*0.036+1.3)*0.5+0.5;
+    const caustic=Math.pow(c1*c2*c3*c4,0.55);
+    const depth=fbm(x*0.002,y*0.003,3)*0.35+0.65;
+    const scatter=Math.pow(Math.max(0,caustic-0.6),2)*4.0;
+    const sparkSeed=hash(Math.floor(x*0.5)*1.3+0.7,Math.floor(y*0.5)*1.7+0.3);
+    const spark=sparkSeed>0.994?(sparkSeed-0.994)/0.006*2.0:0;
+    const total=caustic*depth+scatter*0.5+spark*0.6;
+    const rr=Math.min(255,Math.round((cr*caustic*0.8+220*scatter*0.15+255*spark*0.4)*depth));
+    const rg=Math.min(255,Math.round((cg*caustic*0.8+240*scatter*0.35+255*spark*0.6)*depth));
+    const rb=Math.min(255,Math.round((cb*caustic*0.8+255*scatter*0.55+255*spark)*depth));
+    const i=(y*w+x)*4;
+    img.data[i]=rr;img.data[i+1]=rg;img.data[i+2]=rb;
+    img.data[i+3]=Math.min(255,Math.round(total*200));
+  }}
+  ctx.putImageData(img,0,0);
   return c;
 }
 
-// Coarse forge — larger cracks, more spread glow
+// Bg forge — wider Voronoi cells, Voronoi+pixel glow for background scale
 function genBgForge(glowHex, w, h) {
   const c = makeCanvas(w, h);
   const ctx = c.getContext('2d');
-  ctx.clearRect(0, 0, w, h);
-  const [gr, gg, gb] = hexToRgb(glowHex);
-  for (let i = 0; i < 25; i++) {
-    const sx = Math.random() * w, sy = Math.random() * h;
-    const a = 0.2 + Math.random() * 0.35;
-    ctx.strokeStyle = `rgba(${gr},${gg},${gb},${a})`;
-    ctx.lineWidth = 0.8 + Math.random() * 2;
-    ctx.shadowColor = `rgba(${gr},${gg},${gb},0.7)`;
-    ctx.shadowBlur = 10 + Math.random() * 15;
-    ctx.beginPath(); ctx.moveTo(sx, sy);
-    let cx2 = sx, cy2 = sy;
-    for (let s = 0; s < 5; s++) {
-      cx2 += (Math.random() - 0.5) * 120; cy2 += (Math.random() - 0.5) * 120;
-      ctx.lineTo(cx2, cy2);
-    }
-    ctx.stroke();
+  const img = ctx.createImageData(w, h);
+  const [gr,gg,gb]=hexToRgb(glowHex);
+  function hash(x,y){let n=Math.sin(x*127.1+y*311.7)*43758.5453;return n-Math.floor(n);}
+  function vn(x,y){const ix=Math.floor(x),iy=Math.floor(y),fx=x-ix,fy=y-iy,ux=fx*fx*(3-2*fx),uy=fy*fy*(3-2*fy);return hash(ix,iy)*(1-ux)*(1-uy)+hash(ix+1,iy)*ux*(1-uy)+hash(ix,iy+1)*(1-ux)*uy+hash(ix+1,iy+1)*ux*uy;}
+  function fbm(x,y,o){let v=0,a=1,f=1,t=0;for(let i=0;i<o;i++){v+=vn(x*f,y*f)*a;t+=a;a*=0.5;f*=2.1;}return v/t;}
+  const NC=45;
+  const cells=Array.from({length:NC},(_,i)=>({x:hash(i,0.1)*w,y:hash(i,0.2)*h,heat:Math.pow(hash(i,0.3),2.5)}));
+  for(let y=0;y<h;y++){for(let x=0;x<w;x++){
+    let d1=1e9,d2=1e9,c1i=0;
+    for(let i=0;i<NC;i++){const dx=x-cells[i].x,dy=y-cells[i].y,d=dx*dx+dy*dy;if(d<d1){d2=d1;d1=d;c1i=i;}else if(d<d2){d2=d;}}
+    const edge=Math.sqrt(d2)-Math.sqrt(d1);
+    const crackW=4+fbm(x*0.01,y*0.01,2)*5;
+    const crackT=edge<crackW?1-(edge/crackW):0;
+    const rg2=fbm(x*0.08,y*0.08,4);
+    const rs=fbm(x*0.02,y*0.02,3);
+    const eps=1;
+    const dfdx=fbm((x+eps)*0.02,y*0.02,3)-fbm((x-eps)*0.02,y*0.02,3);
+    const dfdy=fbm(x*0.02,(y+eps)*0.02,3)-fbm(x*0.02,(y-eps)*0.02,3);
+    const nl=Math.sqrt(dfdx*dfdx+dfdy*dfdy+0.01);
+    const nx2=-dfdx/nl,ny2=-dfdy/nl,nz2=0.1/nl;
+    const diff=Math.max(0,nx2*0.5+ny2*(-0.6)+nz2*0.62);
+    const spec=Math.pow(diff,12)*rg2;
+    const heat=cells[c1i].heat;
+    const glowI=crackT*(0.3+heat*1.4);
+    const ambG=Math.exp(-edge*0.04)*heat*0.5;
+    const rockB=(rs*0.4+rg2*0.3)*(0.3+diff*0.7);
+    const rockR=Math.round(20+rockB*35+spec*60);
+    const rockG2=Math.round(18+rockB*30+spec*55);
+    const rockBl=Math.round(22+rockB*40+spec*70);
+    const glowR=Math.min(255,Math.round(gr*1.4*glowI+ambG*gr*0.6));
+    const glowG2=Math.min(255,Math.round(gg*0.7*glowI+ambG*gg*0.3));
+    const glowBl=Math.min(255,Math.round(gb*0.2*glowI));
+    const gT=Math.pow(glowI+ambG*0.5,0.7);
+    const i=(y*w+x)*4;
+    img.data[i]=Math.min(255,Math.max(0,Math.round(rockR*(1-gT)+glowR*gT)));
+    img.data[i+1]=Math.min(255,Math.max(0,Math.round(rockG2*(1-gT)+glowG2*gT)));
+    img.data[i+2]=Math.min(255,Math.max(0,Math.round(rockBl*(1-gT)+glowBl*gT)));
+    img.data[i+3]=Math.min(255,Math.round((rockB*0.6+glowI*1.2+ambG*0.8)*255));
+  }}
+  ctx.putImageData(img,0,0);
+  for(let i=0;i<60;i++){
+    const ex=Math.random()*w,ey=Math.random()*h,er=1+Math.random()*4,ea=0.3+Math.random()*0.5;
+    const grd=ctx.createRadialGradient(ex,ey,0,ex,ey,er*4);
+    grd.addColorStop(0,`rgba(255,240,180,${ea})`);
+    grd.addColorStop(0.4,`rgba(${gr},${Math.round(gg*0.5)},0,${ea*0.5})`);
+    grd.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=grd;ctx.beginPath();ctx.arc(ex,ey,er*4,0,Math.PI*2);ctx.fill();
   }
-  ctx.shadowBlur = 0;
   return c;
 }
 
 // Paint background canvas — called on init and on theme change
-function paintBgCanvas(themeKey) {
-  const canvas = document.getElementById('bg-canvas');
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-  canvas.width = w;
-  canvas.height = h;
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, w, h);
-
-  const theme = TRAY_THEMES[themeKey];
-  if (!theme) return;
-
-  // Draw the base gradient first
-  const grd = ctx.createLinearGradient(0, 0, w * 0.7, h);
-  grd.addColorStop(0, theme['felt-1']);
-  grd.addColorStop(1, theme['felt-2']);
-  ctx.fillStyle = grd;
-  ctx.fillRect(0, 0, w, h);
-
-  // Subtle top sheen
-  const sheen = ctx.createRadialGradient(w * 0.5, 0, 0, w * 0.5, 0, w * 0.7);
-  sheen.addColorStop(0, 'rgba(255,255,255,0.04)');
-  sheen.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = sheen;
-  ctx.fillRect(0, 0, w, h);
-
-  // Generate and draw background texture overlay
-  let texCanvas = null;
-  switch (themeKey) {
-    case 'green-felt':      texCanvas = genBgFelt('#2a6b50', '#1a4a30', w, h); break;
-    case 'mahogany':        texCanvas = genBgWood('#080100', '#c87040', w, h); break;
-    case 'midnight-velvet': texCanvas = genBgVelvet('#c0a8ff', w, h); break;
-    case 'parchment':       texCanvas = genBgParchment('#6a3010', w, h); break;
-    case 'slate-stone':     texCanvas = genBgSlate('#4a5a68', '#8aa0b0', w, h); break;
-    case 'deep-ocean':      texCanvas = genBgOcean('#30a8c8', w, h); break;
-    case 'ember-forge':     texCanvas = genBgForge('#ff5818', w, h); break;
-    case 'ivory-marble':    texCanvas = genBgMarble('#7080a8', '#404870', w, h); break;
-  }
-  if (texCanvas) {
-    ctx.globalAlpha = 0.45;
-    ctx.drawImage(texCanvas, 0, 0);
-    ctx.globalAlpha = 1.0;
-  }
-}
-
 const TRAY_THEMES = {
   'green-felt': {
     label: 'Green Felt',
@@ -2971,22 +3209,142 @@ document.getElementById('tray-theme-select').addEventListener('change', (e) => {
   renderDiceCanvas();
 });
 
-// Repaint background canvas on resize
-let _bgResizeTimer;
+
+/* =========================================================================
+   LAZY TEXTURE SYSTEM
+   No Worker (CSP blocks blob workers in this environment).
+   Green-felt generates synchronously on load (fast enough to be imperceptible).
+   All other themes queue via setTimeout(0) — one task per tick — so the
+   browser stays fully responsive between each generation.
+   bg-canvas is sized to screen dimensions once and never resized on scroll.
+   ========================================================================= */
+
+const TRAY_TEXTURES = {};  // key → data URL
+const BG_BITMAPS    = {};  // key → HTMLCanvasElement
+
+const THEME_ORDER = [
+  'mahogany','midnight-velvet','parchment','slate-stone',
+  'deep-ocean','ember-forge','ivory-marble'
+];
+
+const BG_W = Math.max(screen.width  || 0, window.innerWidth);
+const BG_H = Math.max(screen.height || 0, window.innerHeight);
+
+(function() {
+  const c = document.getElementById('bg-canvas');
+  c.width = BG_W; c.height = BG_H;
+})();
+
+function buildTrayTexture(key) {
+  const map = {
+    'green-felt':      () => genFeltTexture('#2a6b50'),
+    'mahogany':        () => genWoodTexture('#0a0200','#c87840'),
+    'midnight-velvet': () => genVelvetTexture('#c0a8ff'),
+    'parchment':       () => genParchmentTexture('#6a3010'),
+    'slate-stone':     () => genSlateTexture('#4a5a68','#8aa0b0'),
+    'deep-ocean':      () => genOceanTexture('#40b8e0'),
+    'ember-forge':     () => genForgeTexture('#ff6020'),
+    'ivory-marble':    () => genMarbleTexture('#8090b8','#4a5080'),
+  };
+  if (map[key]) TRAY_TEXTURES[key] = map[key]();
+}
+
+function buildBgCanvas(key, w, h) {
+  const theme = TRAY_THEMES[key];
+  if (!theme) return;
+  const c = makeCanvas(w, h);
+  const ctx = c.getContext('2d');
+  const grd = ctx.createLinearGradient(0, 0, w*0.7, h);
+  grd.addColorStop(0, theme['felt-1']); grd.addColorStop(1, theme['felt-2']);
+  ctx.fillStyle = grd; ctx.fillRect(0, 0, w, h);
+  const sh = ctx.createRadialGradient(w*0.5, 0, 0, w*0.5, 0, w*0.7);
+  sh.addColorStop(0, 'rgba(255,255,255,0.04)'); sh.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = sh; ctx.fillRect(0, 0, w, h);
+  const texMap = {
+    'green-felt':      () => genBgFelt('#2a6b50','#1a4a30', w, h),
+    'mahogany':        () => genBgWood('#080100','#c87040', w, h),
+    'midnight-velvet': () => genBgVelvet('#c0a8ff', w, h),
+    'parchment':       () => genBgParchment('#6a3010', w, h),
+    'slate-stone':     () => genBgSlate('#4a5a68','#8aa0b0', w, h),
+    'deep-ocean':      () => genBgOcean('#30a8c8', w, h),
+    'ember-forge':     () => genBgForge('#ff5818', w, h),
+    'ivory-marble':    () => genBgMarble('#7080a8','#404870', w, h),
+  };
+  if (texMap[key]) {
+    const tex = texMap[key]();
+    ctx.globalAlpha = 0.45; ctx.drawImage(tex, 0, 0); ctx.globalAlpha = 1;
+  }
+  BG_BITMAPS[key] = c;
+}
+
+function paintBgCanvas(themeKey) {
+  const src = BG_BITMAPS[themeKey];
+  if (!src) return;
+  document.getElementById('bg-canvas').getContext('2d').drawImage(src, 0, 0);
+}
+
+// Queue: one task per setTimeout(0) tick
+let _queue = [], _queueRunning = false;
+function enqueue(fn) {
+  _queue.push(fn);
+  if (!_queueRunning) drainQueue();
+}
+function drainQueue() {
+  if (!_queue.length) { _queueRunning = false; return; }
+  _queueRunning = true;
+  const task = _queue.shift();
+  setTimeout(() => { task(); drainQueue(); }, 0);
+}
+
+function initTextures() {
+  // Green felt: synchronous — done before applyTrayTheme runs below
+  buildTrayTexture('green-felt');
+  buildBgCanvas('green-felt', BG_W, BG_H);
+
+  // Everything else: one task per tick, browser stays responsive
+  for (const key of THEME_ORDER) {
+    const k = key;
+    enqueue(() => {
+      buildTrayTexture(k);
+      const active = document.getElementById('tray-theme-select').value || 'green-felt';
+      if (k === active) {
+        document.documentElement.style.setProperty('--tray-texture', `url("${TRAY_TEXTURES[k]}")`);
+      }
+    });
+    enqueue(() => {
+      buildBgCanvas(k, BG_W, BG_H);
+      const active = document.getElementById('tray-theme-select').value || 'green-felt';
+      if (k === active) paintBgCanvas(k);
+    });
+  }
+}
+
+// Resize: ignore height changes (scroll/browser chrome) — only rebuild on width change
+let _lastBgWidth = BG_W, _resizeTimer;
 window.addEventListener('resize', () => {
-  clearTimeout(_bgResizeTimer);
-  _bgResizeTimer = setTimeout(() => {
-    const sel = document.getElementById('tray-theme-select');
-    const key = sel.value || 'green-felt';
-    paintBgCanvas(key);
-  }, 120);
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(() => {
+    const newW = window.innerWidth;
+    if (Math.abs(newW - _lastBgWidth) < 40) return;
+    _lastBgWidth = newW;
+    for (const k of Object.keys(BG_BITMAPS)) delete BG_BITMAPS[k];
+    const w2 = Math.max(screen.width || 0, newW);
+    const canvas = document.getElementById('bg-canvas');
+    canvas.width = w2;
+    const active = document.getElementById('tray-theme-select').value || 'green-felt';
+    buildBgCanvas(active, w2, BG_H);
+    paintBgCanvas(active);
+    for (const k of ['green-felt', ...THEME_ORDER]) {
+      if (k !== active) enqueue(() => buildBgCanvas(k, w2, BG_H));
+    }
+  }, 200);
 });
 
 /* =========================================================================
    INIT
    ========================================================================= */
 rebuildField();
-initTrayTextures();
+initTextures();
 applyTrayTheme('green-felt');
 </script>
 </body>
