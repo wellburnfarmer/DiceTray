@@ -10,7 +10,7 @@ Outputs (into ./textures/ by default, configurable via OUTPUT_DIR):
     textures/bg_<theme>.jpg        — 1920×1080 background images (RGB, JPEG)
 
 Themes: green-felt, midnight-velvet, parchment,
-        slate-stone, deep-ocean, ember-forge, ivory-marble
+        slate-stone, deep-ocean, ivory-marble
 """
 
 import math
@@ -335,89 +335,6 @@ def gen_ocean_texture(caustic_hex: str, w=768, h=768) -> np.ndarray:
     return clamp_u8(np.stack([rr, rg, rb, alpha], axis=-1))
 
 
-def gen_forge_texture(glow_hex: str, w=768, h=768) -> np.ndarray:
-    """Ember-forge — cracked rock with glowing fissures (RGBA).
-
-    Voronoi cells are placed in normalised UV space [0,1]² so the crack
-    width and ambient-glow falloff are resolution-independent.  This
-    removes the coarse, pixelated look that appeared when distances were
-    measured in raw pixel units.
-    """
-    gr, gg, gb = hex_to_rgb(glow_hex)
-    xs, ys = make_coords(w, h)
-
-    # --- normalised UV coordinates [0,1] ---
-    us = xs / w
-    vs = ys / h
-
-    # Warp UVs slightly before Voronoi so cracks aren't perfectly straight
-    warp_scale = 0.08   # fraction of texture width
-    wu = fbm_arr(us*6.0,       vs*6.0,       3) * warp_scale
-    wv = fbm_arr(us*6.0 + 3.7, vs*6.0 + 5.2, 3) * warp_scale
-    uw = us + wu
-    vw = vs + wv
-
-    # Voronoi in UV space: ~120 cells gives fine crack detail
-    NC = 120
-    rng = np.random.default_rng(99)
-    cx_arr = rng.random(NC)          # in [0,1]
-    cy_arr = rng.random(NC)
-    heat_arr = np.power(rng.random(NC), 2.5)
-
-    px = uw[:, :, np.newaxis]        # (h, w, 1)
-    py = vw[:, :, np.newaxis]
-    d2 = (px - cx_arr)**2 + (py - cy_arr)**2   # (h, w, NC)
-
-    idx1 = np.argsort(d2, axis=2)[:, :, :2]
-    d_sorted = np.take_along_axis(d2, idx1, axis=2)
-    d1   = d_sorted[:, :, 0]
-    d2_v = d_sorted[:, :, 1]
-    c1i  = idx1[:, :, 0]
-
-    edge = np.sqrt(d2_v) - np.sqrt(d1)   # 0 at crack centreline, UV units
-
-    # Crack width ~1.5 % of texture, modulated by FBM
-    crack_w = 0.008 + fbm_arr(us*8.0, vs*8.0, 2) * 0.012
-    crack_t = np.where(edge < crack_w, 1.0 - (edge / crack_w), 0.0)
-
-    # Rock surface detail — FBM frequencies in UV space
-    rg2 = fbm_arr(us*40.0, vs*40.0, 4)
-    rs  = fbm_arr(us*12.0, vs*12.0, 3)
-
-    # Normal-map from FBM for specular shading
-    eps_uv = 1.0 / w
-    dfdx = (fbm_arr((us+eps_uv)*12.0, vs*12.0, 3)
-            - fbm_arr((us-eps_uv)*12.0, vs*12.0, 3))
-    dfdy = (fbm_arr(us*12.0, (vs+eps_uv)*12.0, 3)
-            - fbm_arr(us*12.0, (vs-eps_uv)*12.0, 3))
-    nl   = np.sqrt(dfdx*dfdx + dfdy*dfdy + 0.01)
-    nx2  = -dfdx / nl
-    ny2  = -dfdy / nl
-    nz2  =  0.1  / nl
-    diff = np.maximum(0, nx2*0.5 + ny2*(-0.6) + nz2*0.62)
-    spec = np.power(diff, 12) * rg2
-
-    heat   = heat_arr[c1i]
-    glow_i = crack_t * (0.3 + heat*1.4)
-    # Ambient glow decays with UV-space edge distance
-    amb_g  = np.exp(-edge * (1.0 / 0.025)) * heat * 0.5
-    rock_b = (rs*0.4 + rg2*0.3) * (0.3 + diff*0.7)
-
-    rock_r  = 20 + rock_b*35 + spec*60
-    rock_g2 = 18 + rock_b*30 + spec*55
-    rock_bl = 22 + rock_b*40 + spec*70
-    glow_r  = np.minimum(255, gr*1.4*glow_i + amb_g*gr*0.6)
-    glow_g2 = np.minimum(255, gg*0.7*glow_i + amb_g*gg*0.3)
-    glow_bl = np.minimum(255, gb*0.2*glow_i)
-
-    g_t = np.power(glow_i + amb_g*0.5, 0.7)
-    ir = np.minimum(255, np.maximum(0, rock_r*(1-g_t) + glow_r*g_t))
-    ig = np.minimum(255, np.maximum(0, rock_g2*(1-g_t) + glow_g2*g_t))
-    ib = np.minimum(255, np.maximum(0, rock_bl*(1-g_t) + glow_bl*g_t))
-    alpha = np.minimum(255, (rock_b*0.6 + glow_i*1.2 + amb_g*0.8) * 255)
-    return clamp_u8(np.stack([ir, ig, ib, alpha], axis=-1))
-
-
 # ---------------------------------------------------------------------------
 # BACKGROUND TEXTURES  (1920×1080, RGB)
 # Background images are fully opaque: we composite the texture onto the
@@ -640,50 +557,6 @@ def gen_bg_ocean(caustic_hex: str, w: int, h: int) -> np.ndarray:
     return clamp_u8(np.stack([rr, rg, rb, alpha], axis=-1))
 
 
-def gen_bg_forge(glow_hex: str, w: int, h: int) -> np.ndarray:
-    """Coarse forge — wider Voronoi cells (background scale)."""
-    gr, gg, gb = hex_to_rgb(glow_hex)
-    xs, ys = make_coords(w, h)
-    NC = 45
-    rng3 = np.random.default_rng(13)
-    cx_arr = rng3.random(NC) * w
-    cy_arr = rng3.random(NC) * h
-    heat_a = np.power(rng3.random(NC), 2.5)
-
-    px = xs[:, :, np.newaxis]
-    py = ys[:, :, np.newaxis]
-    d2_all = (px - cx_arr)**2 + (py - cy_arr)**2
-    idx2 = np.argsort(d2_all, axis=2)[:, :, :2]
-    d_s = np.take_along_axis(d2_all, idx2, axis=2)
-    d1 = d_s[:, :, 0]; d2_v = d_s[:, :, 1]; c1i = idx2[:, :, 0]
-    edge = np.sqrt(d2_v) - np.sqrt(d1)
-    cw = 4 + fbm_arr(xs*0.01, ys*0.01, 2)*5
-    ct = np.where(edge < cw, 1-(edge/cw), 0.0)
-    rg2 = fbm_arr(xs*0.08, ys*0.08, 4)
-    rs  = fbm_arr(xs*0.02, ys*0.02, 3)
-    eps2 = 1.0
-    dfdx = fbm_arr((xs+eps2)*0.02, ys*0.02, 3) - fbm_arr((xs-eps2)*0.02, ys*0.02, 3)
-    dfdy = fbm_arr(xs*0.02, (ys+eps2)*0.02, 3) - fbm_arr(xs*0.02, (ys-eps2)*0.02, 3)
-    nl = np.sqrt(dfdx*dfdx+dfdy*dfdy+0.01)
-    nx2=-dfdx/nl; ny2=-dfdy/nl; nz2=0.1/nl
-    diff=np.maximum(0,nx2*0.5+ny2*(-0.6)+nz2*0.62)
-    spec=np.power(diff,12)*rg2
-    heat=heat_a[c1i]
-    gi=ct*(0.3+heat*1.4)
-    ag=np.exp(-edge*0.04)*heat*0.5
-    rb=( rs*0.4+rg2*0.3)*(0.3+diff*0.7)
-    rr=20+rb*35+spec*60; rg2b=18+rb*30+spec*55; rbl=22+rb*40+spec*70
-    gr2=np.minimum(255,gr*1.4*gi+ag*gr*0.6)
-    gg2=np.minimum(255,gg*0.7*gi+ag*gg*0.3)
-    gb2=np.minimum(255,gb*0.2*gi)
-    gt=np.power(gi+ag*0.5,0.7)
-    ir=np.minimum(255,np.maximum(0,rr*(1-gt)+gr2*gt))
-    ig=np.minimum(255,np.maximum(0,rg2b*(1-gt)+gg2*gt))
-    ib=np.minimum(255,np.maximum(0,rbl*(1-gt)+gb2*gt))
-    alpha=np.minimum(255,(rb*0.6+gi*1.2+ag*0.8)*255)
-    return clamp_u8(np.stack([ir,ig,ib,alpha],axis=-1))
-
-
 # ---------------------------------------------------------------------------
 # Theme definitions (matching TRAY_THEMES in JS)
 # ---------------------------------------------------------------------------
@@ -713,11 +586,6 @@ THEMES = {
         'felt-1': '#0a1828', 'felt-2': '#060f1a',
         'tray_fn':  lambda: gen_ocean_texture('#40b8e0'),
         'bg_fn':    lambda: gen_bg_ocean('#30a8c8', BG_W, BG_H),
-    },
-    'ember-forge': {
-        'felt-1': '#200800', 'felt-2': '#120400',
-        'tray_fn':  lambda: gen_forge_texture('#ff6020'),
-        'bg_fn':    lambda: gen_bg_forge('#ff5818', BG_W, BG_H),
     },
     'ivory-marble': {
         'felt-1': '#e8e0d4', 'felt-2': '#d4c8b8',
