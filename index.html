@@ -475,10 +475,10 @@ SOFTWARE.
         <select class="colour-scheme-select" id="colour-scheme-select" aria-label="Customise dice colours">
           <option value="" disabled selected>Customise Dice</option>
           <option value="classic">White &amp; Black</option>
-          <option value="amethyst">Purple &amp; Blue</option>
           <option value="crimson">Red &amp; Gold</option>
           <option value="midnight">Midnight &amp; Silver</option>
           <option value="forest">Forest &amp; Copper</option>
+          <option value="amethyst">Purple &amp; Blue</option>
           <option value="obsidian">Obsidian &amp; Amber</option>
           <option value="slate">Slate &amp; Jade</option>
           <option value="burgundy">Burgundy &amp; Cream</option>
@@ -494,7 +494,7 @@ SOFTWARE.
           <option value="ivory-marble">Ivory Marble</option>
           <option value="parchment">Ancient Parchment</option>
           <option value="midnight-velvet">Midnight Velvet</option>
-          <option value="slate-stone">Slate Stone</option>
+          <option value="weathered-slate">Weathered Slate</option>
           <option value="deep-ocean">Deep Ocean</option>
         </select>
       </div>
@@ -519,7 +519,7 @@ SOFTWARE.
   </div>
 
   <div class="count-label-row">
-    <span class="tray-sub" id="count-label">1 / 20 on the felt</span>
+    <span class="tray-sub" id="count-label">1 / 20 in the Tray</span>
     <button class="roll-btn" id="roll-btn">Roll the tray</button>
   </div>
   <div class="adv-row">
@@ -589,8 +589,8 @@ const COLOUR_SCHEMES = {
     // Primary: dark forest green body, warm copper numerals
     // Alternate: warm copper body, dark forest green numerals
     body:        '#0f2d1a',
-    bodyDark:    '#c87941',
-    numeral:     '#c87941',
+    bodyDark:    '#FE9A37',
+    numeral:     '#FE9A37',
     numeralDark: '#0f2d1a',
     stroke:      'rgba(200,121,65,0.45)',
     strokeDark:  'rgba(15,45,26,0.6)',
@@ -609,8 +609,8 @@ const COLOUR_SCHEMES = {
     // Primary: dark slate body, bright jade numerals
     // Alternate: bright jade body, dark slate numerals
     body:        '#1e2a2e',
-    bodyDark:    '#34d399',
-    numeral:     '#34d399',
+    bodyDark:    '#00a86b',
+    numeral:     '#00a86b',
     numeralDark: '#1e2a2e',
     stroke:      'rgba(52,211,153,0.45)',
     strokeDark:  'rgba(30,42,46,0.7)',
@@ -626,14 +626,14 @@ const COLOUR_SCHEMES = {
     strokeDark:  'rgba(59,10,30,0.6)',
   },
   prussian: {
-    // Primary: prussian blue body, dusty rose numerals
-    // Alternate: dusty rose body, prussian blue numerals
-    body:        '#0d2b40',
-    bodyDark:    '#e8a0a8',
-    numeral:     '#e8a0a8',
-    numeralDark: '#0d2b40',
-    stroke:      'rgba(232,160,168,0.45)',
-    strokeDark:  'rgba(13,43,64,0.6)',
+    // Primary: dusty rose body, prussian blue numerals
+    // Alternate: prussian blue body, dusty rose numerals
+    body:        '#e8a0a8',
+    bodyDark:    '#003153',
+    numeral:     '#003153',
+    numeralDark: '#e8a0a8',
+    stroke:      'rgba(13,43,64,0.6)',
+    strokeDark:  'rgba(232,160,168,0.45)',
   },
   teal: {
     // Primary: deep teal body, warm coral numerals
@@ -1445,7 +1445,7 @@ function drawD4FaceNumerals(ctx, die, face, rotVerts, cx, cy, scale, dieOpacity,
 }
 
 function updateCountLabel() {
-  document.getElementById('count-label').textContent = `${totalCount()} / 20 on the felt`;
+  document.getElementById('count-label').textContent = `${totalCount()} / 20 in the Tray`;
 }
 
 function updateGroupList() {
@@ -2189,8 +2189,8 @@ const TRAY_THEMES = {
     'surface-line-dim': 'rgba(106,48,16,0.13)',
     'tray-bg': '#e0bf77',
   },
-  'slate-stone': {
-    label: 'Slate Stone',
+  'weathered-slate': {
+    label: 'Weathered Slate',
     'felt-1': '#2a2e34',
     'felt-2': '#046982',
     'chalk': '#e8eef4',
@@ -2248,20 +2248,20 @@ const TRAY_THEMES = {
   'ivory-marble': {
     label: 'Ivory Marble',
     'felt-1': '#e8e0d4',
-    'felt-2': '#d4c8b8',
+    'felt-2': '#ffffff',
     'chalk': '#1a1410',
-    'chalk-dim': '#4a3e32',
-    'brass': '#2a1e80',
-    'brass-dim': '#1a0e60',
-    'ink': '#f8f0e8',
-    'ember': '#8a1a10',
+    'chalk-dim': '#96475c',
+    'brass': '#63001a',
+    'brass-dim': '#96475c',
+    'ink': '#63001a',
+    'ember': '#63001a',
     'font-title': "'Playfair Display', serif",
     'font-ui': "'Courier Prime', monospace",
     'btn-bg': 'rgba(26,20,16,0.07)',
-    'btn-border': 'rgba(42,30,128,0.3)',
-    'btn-hover-bg': 'rgba(42,30,128,0.14)',
-    'roll-btn-grad-top': '#2a1e80',
-    'roll-btn-grad-bot': '#1a0e60',
+    'btn-border': 'rgba(99,0,26,0.3)',
+    'btn-hover-bg': 'rgba(99,0,26,0.14)',
+    'roll-btn-grad-top': '#63001a',
+    'roll-btn-grad-bot': '#63001a',
     'roll-btn-ink': '#f8f0e8',
     'adv-btn-bg': 'rgba(30,100,30,0.08)',
     'adv-btn-border': 'rgba(30,100,30,0.55)',
