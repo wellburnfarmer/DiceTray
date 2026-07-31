@@ -10,7 +10,7 @@ Outputs (into ./textures/ by default, configurable via OUTPUT_DIR):
     textures/bg_<theme>.jpg        — 1920×1080 background images (RGB, JPEG)
 
 Themes: green-felt, midnight-velvet, parchment,
-        slate-stone, deep-ocean, ivory-marble
+        weathered-slate, deep-ocean, ivory-marble
 """
 
 import math
@@ -218,7 +218,7 @@ def gen_velvet_texture(sheen_hex: str, w=768, h=768) -> np.ndarray:
 
 
 def gen_slate_texture(mid_hex: str, light_hex: str, w=768, h=768) -> np.ndarray:
-    """Slate-stone — diagonal shear planes + mineral veins (RGBA)."""
+    """weathered-slate — diagonal shear planes + mineral veins (RGBA)."""
     mr, mg, mb = hex_to_rgb(mid_hex)
     lr2, lg2, lb2 = hex_to_rgb(light_hex)
     xs, ys = make_coords(w, h)
@@ -577,7 +577,7 @@ THEMES = {
         'tray_fn':  lambda: gen_parchment_texture('#6a3010'),
         'bg_fn':    lambda: gen_bg_parchment('#6a3010', BG_W, BG_H),
     },
-    'slate-stone': {
+    'weathered-slate': {
         'felt-1': '#3a4550', 'felt-2': '#2a3540',
         'tray_fn':  lambda: gen_slate_texture('#4a5a68', '#8aa0b0'),
         'bg_fn':    lambda: gen_bg_slate('#4a5a68', '#8aa0b0', BG_W, BG_H),
