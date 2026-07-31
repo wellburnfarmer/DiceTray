@@ -10,7 +10,7 @@ Outputs (into ./textures/ by default, configurable via OUTPUT_DIR):
     textures/bg_<theme>.jpg        — 1920×1080 background images (RGB, JPEG)
 
 Themes: green-felt, midnight-velvet, parchment,
-        weathered-slate, deep-ocean, ivory-marble
+        weathered-slate, distant-galaxy, ivory-marble
 """
 
 import math
@@ -298,8 +298,8 @@ def gen_parchment_texture(dark_hex: str, w=768, h=768) -> np.ndarray:
     return clamp_u8(np.stack([r_arr, g_arr, b_arr, alpha], axis=-1))
 
 
-def gen_ocean_texture(caustic_hex: str, w=768, h=768) -> np.ndarray:
-    """Deep-ocean — double-warped caustic light patterns (RGBA)."""
+def gen_galaxy_texture(caustic_hex: str, w=768, h=768) -> np.ndarray:
+    """distant-galaxy — double-warped caustic light patterns (RGBA)."""
     cr, cg, cb = hex_to_rgb(caustic_hex)
     xs, ys = make_coords(w, h)
 
@@ -530,8 +530,8 @@ def gen_bg_parchment(dark_hex: str, w: int, h: int) -> np.ndarray:
     return clamp_u8(np.stack([r_arr, g_arr, b_arr, alpha], axis=-1))
 
 
-def gen_bg_ocean(caustic_hex: str, w: int, h: int) -> np.ndarray:
-    """Coarse ocean — larger caustic blobs (background scale)."""
+def gen_bg_galaxy(caustic_hex: str, w: int, h: int) -> np.ndarray:
+    """Coarse galaxy — larger caustic blobs (background scale)."""
     cr, cg, cb = hex_to_rgb(caustic_hex)
     xs, ys = make_coords(w, h)
     wx1 = fbm_arr(xs*0.004, ys*0.004, 4)*55
@@ -582,10 +582,10 @@ THEMES = {
         'tray_fn':  lambda: gen_slate_texture('#4a5a68', '#8aa0b0'),
         'bg_fn':    lambda: gen_bg_slate('#4a5a68', '#8aa0b0', BG_W, BG_H),
     },
-    'deep-ocean': {
+    'distant-galaxy': {
         'felt-1': '#0a1828', 'felt-2': '#060f1a',
-        'tray_fn':  lambda: gen_ocean_texture('#40b8e0'),
-        'bg_fn':    lambda: gen_bg_ocean('#30a8c8', BG_W, BG_H),
+        'tray_fn':  lambda: gen_galaxy_texture('#40b8e0'),
+        'bg_fn':    lambda: gen_bg_galaxy('#30a8c8', BG_W, BG_H),
     },
     'ivory-marble': {
         'felt-1': '#e8e0d4', 'felt-2': '#d4c8b8',
