@@ -658,6 +658,16 @@ const COLOUR_SCHEMES = {
 };
 
 let currentScheme = 'classic';
+let schemeCustomised = false;
+
+// Paired dice colour scheme for each tray (used when dice haven't been customised)
+const TRAY_DEFAULT_SCHEME = {
+  'ivory-marble':    'crimson',
+  'parchment':       'amethyst',
+  'midnight-velvet': 'charcoal',
+  'weathered-slate': 'burgundy',
+  'distant-galaxy':  'obsidian',
+};
 
 function getDieColors(die) {
   const scheme = COLOUR_SCHEMES[currentScheme] || COLOUR_SCHEMES.classic;
@@ -1550,6 +1560,7 @@ colourSchemeSelect.addEventListener('change', () => {
   const val = colourSchemeSelect.value;
   if (COLOUR_SCHEMES[val]) {
     currentScheme = val;
+    schemeCustomised = true;
     renderDiceCanvas();
   }
 });
@@ -2306,7 +2317,18 @@ function applyTrayTheme(themeKey) {
 }
 
 document.getElementById('tray-theme-select').addEventListener('change', (e) => {
-  applyTrayTheme(e.target.value);
+  const trayKey = e.target.value;
+  applyTrayTheme(trayKey);
+
+  // Auto-pair dice colours when the user hasn't manually customised them
+  if (!schemeCustomised) {
+    const paired = TRAY_DEFAULT_SCHEME[trayKey];
+    if (paired && COLOUR_SCHEMES[paired]) {
+      currentScheme = paired;
+      colourSchemeSelect.value = paired;
+    }
+  }
+
   renderDiceCanvas();
 });
 
