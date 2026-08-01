@@ -999,11 +999,15 @@ const DIE_GAP = 22;
 
 function buildFreshDie(sides, isPercentileUnit) {
   const die = buildDieModel(sides, isPercentileUnit);
-  const restX = rollFloat(-180, 180);
-  const restY = rollFloat(-180, 180);
-  const qx = quatFromAxisAngle([1, 0, 0], restX);
-  const qy = quatFromAxisAngle([0, 1, 0], restY);
-  die.currentQuat = quatMultiply(qy, qx);
+  // Pick a random face to show face-up, then settle it flat with a random
+  // horizontal rotation — no vertical tilt, so the die looks naturally at rest.
+  const faces = die.faces.filter(f => f.label !== '');
+  const face = faces[Math.floor(rollFloat(0, faces.length))];
+  const isD4 = sides === 4;
+  const azimuth = rollFloat(0, 360);
+  // Use a random seed orientation so solveSettle doesn't degenerate
+  const seedQuat = quatFromAxisAngle([0, 1, 0], rollFloat(0, 360));
+  die.currentQuat = solveSettleFromQuat(seedQuat, face.normal, face.up, isD4, azimuth);
   return die;
 }
 
@@ -1504,6 +1508,12 @@ function setGroupChipsDisabled(disabled) {
   document.querySelectorAll('.group-chip button').forEach((b) => { b.disabled = disabled; });
 }
 
+const TOTAL_PLACEHOLDER = '<span class="total-number is-placeholder">&mdash;</span><span class="total-caption">total appears here after rolling</span>';
+
+function resetTotal() {
+  document.getElementById('roll-total').innerHTML = TOTAL_PLACEHOLDER;
+}
+
 function addOne(sides) {
   if (rolling) return;
   if (sides === 100) {
@@ -1514,6 +1524,7 @@ function addOne(sides) {
     order.push(sides);
   }
   rebuildField();
+  resetTotal();
 }
 function removeOne(sides) {
   if (rolling) return;
@@ -1525,13 +1536,13 @@ function removeOne(sides) {
     if (tenIdx !== -1) order.splice(tenIdx, 1);
   }
   rebuildField();
+  resetTotal();
 }
 function clearAll() {
   if (rolling) return;
   order = [];
   rebuildField();
-  document.getElementById('roll-total').innerHTML =
-    '<span class="total-number is-placeholder">&mdash;</span><span class="total-caption">total appears here after rolling</span>';
+  resetTotal();
 }
 
 /* =========================================================================
@@ -1606,10 +1617,14 @@ function buildTumbleWaypoints(startQuat, sides, finalSolver) {
   return quats;
 }
 
-function solveSettleFromQuat(currentQuat, faceNormal, faceUp, faceDown) {
+// azimuthDeg: optional random horizontal rotation applied after settling so the
+// die doesn't always face the viewer perfectly. 0/undefined = old behaviour.
+function solveSettleFromQuat(currentQuat, faceNormal, faceUp, faceDown, azimuthDeg) {
   const currentMat = quatToMatrix(currentQuat);
   const target = faceDown ? [0, 0, -1] : [0, 0, 1];
-  const targetUp = [0, 1, 0];
+  // Rotate the canonical up reference by azimuthDeg around the vertical axis.
+  const azRad = ((azimuthDeg || 0) * Math.PI) / 180;
+  const targetUp = [Math.sin(azRad), Math.cos(azRad), 0];
 
   const curNormal = applyMatrixToVector(currentMat, faceNormal);
   const curUp = applyMatrixToVector(currentMat, faceUp);
@@ -1716,6 +1731,59 @@ function runRollAnimations(states, onAllDone) {
   requestAnimationFrame(frame);
 }
 
+// Smoothly rotate every settled die so its top face is neatly aligned toward
+// the viewer (azimuth 0).  Called after a short delay once a roll finishes.
+function alignDiceToViewer(diceToAlign, durationMs, onDone) {
+  // Build from/to pairs.  Dice with no rolled label (e.g. percentile units
+  // whose label is driven by their owner) are handled via their owner, so we
+  // skip them to avoid double-rotating.
+  const pairs = diceToAlign
+    .filter((d) => d.rolledLabel !== null && d.rolledLabel !== undefined)
+    .map((d) => {
+      const face = d.faceByLabel[d.rolledLabel];
+      if (!face) return null;
+      const isD4 = d.sides === 4;
+      const toQuat = solveSettleFromQuat(d.currentQuat, face.normal, face.up, isD4, 0);
+      return { die: d, fromQuat: d.currentQuat.slice(), toQuat };
+    })
+    .filter(Boolean);
+
+  // Also align percentile unit dice to match their owner's rotation delta.
+  // We do this by computing the rotation that was applied to the owner and
+  // applying the same to the unit die.
+  diceToAlign.forEach((d) => {
+    if (!d.isPercentileUnit) return;
+    const owner = diceToAlign.find(
+      (x) => !x.isPercentileUnit && x.pairId === d.pairId
+    );
+    if (!owner) return;
+    const ownerPair = pairs.find((p) => p.die === owner);
+    if (!ownerPair) return;
+    pairs.push({ die: d, fromQuat: d.currentQuat.slice(), toQuat: ownerPair.toQuat });
+  });
+
+  if (pairs.length === 0) { if (onDone) onDone(); return; }
+
+  const startTime = performance.now();
+
+  function frame(now) {
+    const raw = (now - startTime) / durationMs;
+    const t = easeOutSettle(Math.min(raw, 1));
+    pairs.forEach(({ die, fromQuat, toQuat }) => {
+      die.currentQuat = quatSlerp(fromQuat, toQuat, t);
+    });
+    renderDiceCanvas();
+    if (raw < 1) {
+      requestAnimationFrame(frame);
+    } else {
+      pairs.forEach(({ die, toQuat }) => { die.currentQuat = toQuat; });
+      renderDiceCanvas();
+      if (onDone) onDone();
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
 function animateTumbleAndSettle(diceToRoll, onAllSettled) {
   const results = diceToRoll.map((d) => {
     d.settled = false;
@@ -1740,8 +1808,9 @@ function animateTumbleAndSettle(diceToRoll, onAllSettled) {
   const animStates = diceToRoll.map((d, i) => {
     const face = d.faceByLabel[results[i].label];
     const isD4 = d.sides === 4;
+    const azimuth = rollFloat(0, 360);
     const waypoints = buildTumbleWaypoints(d.currentQuat, d.sides, (fromQuat) =>
-      solveSettleFromQuat(fromQuat, face.normal, face.up, isD4)
+      solveSettleFromQuat(fromQuat, face.normal, face.up, isD4, azimuth)
     );
     const rollDurationMs = rollFloat(2000, 3000);
     return buildRollAnimState(d, waypoints, rollDurationMs);
@@ -1771,7 +1840,11 @@ function rollDice(diceToRoll, onSettled) {
   const totalElStart = document.getElementById('roll-total');
   totalElStart.innerHTML = '<span class="total-number is-placeholder">&mdash;</span><span class="total-caption">rolling\u2026</span>';
 
-  animateTumbleAndSettle(diceToRoll, finishRoll);
+  animateTumbleAndSettle(diceToRoll, () => {
+    setTimeout(() => {
+      alignDiceToViewer(diceToRoll, 350, finishRoll);
+    }, 380);
+  });
 
   function finishRoll() {
     if (onSettled) onSettled();
@@ -1930,16 +2003,20 @@ function rollAdvantage(keepHigh) {
         layoutDiceGrid();
         renderDiceCanvas();
 
-        rolling = false;
-        rollBtn.disabled = false;
-        advBtn.disabled = false;
-        disadvBtn.disabled = false;
-        refreshPickerDisabled();
-        refreshAdvantageButtons();
-        setGroupChipsDisabled(false);
-        setModifierDisabled(false);
+        setTimeout(() => {
+          alignDiceToViewer(dice, 350, () => {
+            rolling = false;
+            rollBtn.disabled = false;
+            advBtn.disabled = false;
+            disadvBtn.disabled = false;
+            refreshPickerDisabled();
+            refreshAdvantageButtons();
+            setGroupChipsDisabled(false);
+            setModifierDisabled(false);
 
-        scoreAndRecordRoll(modifier);
+            scoreAndRecordRoll(modifier);
+          });
+        }, 380);
       });
     }, PAUSE_MS);
   });
