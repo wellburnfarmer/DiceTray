@@ -1012,32 +1012,54 @@ function buildFreshDie(sides, isPercentileUnit) {
 }
 
 function rebuildField() {
-  const existingSchemes = dice
-    .filter((d) => !d.isPercentileUnit)
-    .map((d) => d.colorScheme);
-  const darkCount = existingSchemes.filter((s) => s === 'dark').length;
-  const newDieScheme = darkCount > existingSchemes.length - darkCount ? 'dark' : 'cream';
+  // Capture existing non-percentile dice in slot order so we can carry their
+  // state (orientation, value, colour scheme) forward.  Only genuinely new
+  // slots get a fresh die; everything else keeps its current quaternion, value,
+  // rolledLabel, and settled flag so adding/removing one die doesn't disturb
+  // the others.
+  const prevDice = dice.filter((d) => !d.isPercentileUnit);
+  const darkCount = prevDice.filter((d) => d.colorScheme === 'dark').length;
+  const newDieScheme = darkCount > prevDice.length - darkCount ? 'dark' : 'cream';
 
   dice = [];
   let pairCounter = 0;
-  let slotIndex = 0;
+  let prevSlot = 0;   // index into prevDice
+
   for (let i = 0; i < order.length; i++) {
     const sides = order[i];
-    const die = buildFreshDie(sides);
-    die.colorScheme = slotIndex < existingSchemes.length ? existingSchemes[slotIndex] : newDieScheme;
-    slotIndex++;
+    let die;
+    const prev = prevDice[prevSlot];
+
+    if (prev && prev.sides === sides) {
+      // Reuse the existing die — carry all state forward.
+      die = prev;
+    } else {
+      // New die or type changed — build fresh.
+      die = buildFreshDie(sides);
+      die.colorScheme = prev ? prev.colorScheme : newDieScheme;
+    }
+    prevSlot++;
 
     if (sides === 100) {
       const pairId = pairCounter++;
       die.pairId = pairId;
-      const unitDie = buildDieModel(10, true);
-      unitDie.currentQuat = die.currentQuat;
+      // Carry or create the paired unit die.
+      const prevUnit = prevDice[prevSlot] && prevDice[prevSlot].isPercentileUnit
+        ? prevDice[prevSlot] : null;
+      let unitDie;
+      if (prevUnit && prev && prev.sides === 100) {
+        unitDie = prevUnit;
+      } else {
+        unitDie = buildDieModel(10, true);
+        unitDie.currentQuat = die.currentQuat;
+        unitDie.colorScheme = die.colorScheme;
+      }
       unitDie.pairId = pairId;
       unitDie.isPercentileUnit = true;
-      unitDie.colorScheme = die.colorScheme;
       die.unitDie = unitDie;
       dice.push(die, unitDie);
-      i++;
+      i++;           // skip the paired '10' entry in order
+      prevSlot++;    // skip the old unit slot in prevDice too
     } else {
       dice.push(die);
     }
@@ -1841,22 +1863,22 @@ function rollDice(diceToRoll, onSettled) {
   totalElStart.innerHTML = '<span class="total-number is-placeholder">&mdash;</span><span class="total-caption">rolling\u2026</span>';
 
   animateTumbleAndSettle(diceToRoll, () => {
+    // Score and display the total as soon as dice have settled.
+    if (onSettled) onSettled();
+    scoreAndRecordRoll(modifier);
+    // After a short pause, rotate each die to face the viewer, then unlock.
     setTimeout(() => {
-      alignDiceToViewer(diceToRoll, 350, finishRoll);
+      alignDiceToViewer(diceToRoll, 350, () => {
+        rolling = false;
+        rollBtn.textContent = 'Roll the tray';
+        rollBtn.disabled = false;
+        refreshPickerDisabled();
+        refreshAdvantageButtons();
+        setGroupChipsDisabled(false);
+        setModifierDisabled(false);
+      });
     }, 380);
   });
-
-  function finishRoll() {
-    if (onSettled) onSettled();
-    rolling = false;
-    rollBtn.textContent = 'Roll the tray';
-    rollBtn.disabled = false;
-    refreshPickerDisabled();
-    refreshAdvantageButtons();
-    setGroupChipsDisabled(false);
-    setModifierDisabled(false);
-    scoreAndRecordRoll(modifier);
-  }
 }
 
 function roll() {
@@ -1997,14 +2019,23 @@ function rollAdvantage(keepHigh) {
 
       advCreamRole = winningRole;
 
-      const COLLAPSE_MS = 420;
-      runCollapseAnimation(winners, losers, COLLAPSE_MS, () => {
-        dice = winners;
-        layoutDiceGrid();
-        renderDiceCanvas();
+      // Set dice to winners so scoreAndRecordRoll reads the right values.
+      // Do NOT call layoutDiceGrid() yet — the winners are still at their
+      // doubled-grid screenX/Y positions, which runCollapseAnimation needs as
+      // its start positions.  layoutDiceGrid() runs after the collapse finishes.
+      dice = winners;
+      renderDiceCanvas();
+      scoreAndRecordRoll(modifier);
 
-        setTimeout(() => {
-          alignDiceToViewer(dice, 350, () => {
+      // Pause, then align the winning dice to face the viewer …
+      setTimeout(() => {
+        alignDiceToViewer(winners, 350, () => {
+          // … then run the collapse (winners slide together, losers fade out).
+          const COLLAPSE_MS = 420;
+          runCollapseAnimation(winners, losers, COLLAPSE_MS, () => {
+            layoutDiceGrid();
+            renderDiceCanvas();
+
             rolling = false;
             rollBtn.disabled = false;
             advBtn.disabled = false;
@@ -2013,11 +2044,9 @@ function rollAdvantage(keepHigh) {
             refreshAdvantageButtons();
             setGroupChipsDisabled(false);
             setModifierDisabled(false);
-
-            scoreAndRecordRoll(modifier);
           });
-        }, 380);
-      });
+        });
+      }, 380);
     }, PAUSE_MS);
   });
 }
