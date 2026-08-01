@@ -114,13 +114,31 @@ SOFTWARE.
     flex-shrink: 0;
   }
 
+  /* Fixed label that always shows regardless of selected value */
+  .colour-scheme-label {
+    position: absolute;
+    inset: 0 28px 0 10px;  /* leave room for the chevron on the right */
+    display: flex;
+    align-items: center;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    color: var(--text-muted);
+    pointer-events: none;  /* clicks pass through to the select beneath */
+    white-space: nowrap;
+    overflow: hidden;
+    transition: color 0.15s;
+    z-index: 1;
+  }
+  .colour-scheme-wrapper:hover .colour-scheme-label { color: var(--text-muted); }
+
   .colour-scheme-select {
     font-family: var(--font-ui);
     font-size: 13px;
     letter-spacing: 0;
     background-color: transparent;
     border: 1px solid var(--text-muted);
-    color: var(--text-muted);
+    /* Make the native selected-value text invisible — the overlay label shows instead */
+    color: transparent;
     padding: 7px 28px 7px 10px;
     border-radius: 6px;
     cursor: pointer;
@@ -471,8 +489,8 @@ SOFTWARE.
     <h1 class="tray-title">Dice<span class="accent">Tray</span></h1>
     <div class="tray-controls">
       <div class="colour-scheme-wrapper">
+        <span class="colour-scheme-label" aria-hidden="true">Customise Dice</span>
         <select class="colour-scheme-select" id="colour-scheme-select" aria-label="Customise dice colours">
-          <option value="" disabled selected>Customise Dice</option>
           <option value="classic">White &amp; Black</option>
           <option value="crimson">Red &amp; Gold</option>
           <option value="midnight">Midnight &amp; Silver</option>
@@ -487,8 +505,8 @@ SOFTWARE.
         </select>
       </div>
       <div class="colour-scheme-wrapper">
+        <span class="colour-scheme-label" aria-hidden="true">Customise Tray</span>
         <select class="colour-scheme-select" id="tray-theme-select" aria-label="Customise tray theme">
-          <option value="" disabled selected>Customise Tray</option>
           <option value="green-felt">Green Felt</option>
           <option value="ivory-marble">Ivory Marble</option>
           <option value="parchment">Ancient Parchment</option>
@@ -661,6 +679,7 @@ let schemeCustomised = false;
 
 // Paired dice colour scheme for each tray (used when dice haven't been customised)
 const TRAY_DEFAULT_SCHEME = {
+  'green-felt':      'classic',   // white & black — the base default
   'ivory-marble':    'crimson',
   'parchment':       'amethyst',
   'midnight-velvet': 'charcoal',
@@ -1553,8 +1572,7 @@ function refreshAdvantageButtons() {
    ========================================================================= */
 const colourSchemeSelect = document.getElementById('colour-scheme-select');
 
-// The first <option> is a non-interactive label "Customise Dice" — skip it
-// in the value logic. We track the selected scheme separately.
+// Track the selected scheme separately from the native select value.
 colourSchemeSelect.addEventListener('change', () => {
   const val = colourSchemeSelect.value;
   if (COLOUR_SCHEMES[val]) {
