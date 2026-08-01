@@ -2343,6 +2343,45 @@ document.getElementById('tray-theme-select').addEventListener('change', (e) => {
    ========================================================================= */
 
 /* =========================================================================
+   IMAGE PRELOAD
+   Kick off fetches for every tray texture and background immediately on
+   page load so the browser caches them before the user switches themes.
+   green-felt is loaded first (and decoded) because it is the default tray.
+   ========================================================================= */
+(function preloadTrayImages() {
+  const THEME_KEYS = [
+    'green-felt',       // default — load first
+    'midnight-velvet',
+    'parchment',
+    'weathered-slate',
+    'distant-galaxy',
+    'ivory-marble',
+  ];
+
+  // Preload the default tray eagerly (decode() ensures it is paint-ready)
+  const defaultBg   = new Image(); defaultBg.src   = 'textures/bg_green-felt.jpg';
+  const defaultTray = new Image(); defaultTray.src = 'textures/tray_green-felt.png';
+  Promise.all([defaultBg.decode().catch(()=>{}), defaultTray.decode().catch(()=>{})]);
+
+  // Preload the rest after a short idle gap so they don't compete with first paint
+  const rest = THEME_KEYS.slice(1);
+  function loadNext() {
+    const key = rest.shift();
+    if (!key) return;
+    const bg   = new Image(); bg.src   = `textures/bg_${key}.jpg`;
+    const tray = new Image(); tray.src = `textures/tray_${key}.png`;
+    // Chain: start the next pair once this tray texture has loaded (or errored)
+    tray.onload = tray.onerror = loadNext;
+  }
+  // Use requestIdleCallback where available, otherwise a short timeout
+  if (typeof requestIdleCallback === 'function') {
+    requestIdleCallback(loadNext, { timeout: 2000 });
+  } else {
+    setTimeout(loadNext, 500);
+  }
+})();
+
+/* =========================================================================
    INIT
    ========================================================================= */
 rebuildField();
