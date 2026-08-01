@@ -32,36 +32,60 @@ SOFTWARE.
   @import url('https://fonts.googleapis.com/css2?family=Almendra:opsz,wght@9..144,400;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;700&family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&family=Rajdhani:wght@400;500;600;700&family=Uncial+Antiqua&family=Share+Tech+Mono&family=Playfair+Display:wght@400;600;700&family=Courier+Prime:wght@400;700&display=swap');
 
   :root {
-    /* Tray theme variables — overridden by JS when a tray is selected */
-    --dropdown-bg: #1f4d3a;
-    --die-edge: #16382b;
-    --text-primary: #f4ead2;
-    --text-muted: #cfc6ab;
-    --accent: #c9a24b;
-    --accent-dim: #8d7438;
-    --roll-btn-text: #0f2a20;
-    --destructive: #d8654a;
+    /* ── Tray theme variables — overridden by JS when a tray is selected ──── */
+
+    /* Text */
+    --color-text:            #f4ead2;  /* primary text: body, buttons, inputs */
+    --color-text-secondary:  #cfc6ab;  /* secondary text: labels, captions, muted UI */
+    --color-title:           #f4ead2;  /* "DiceTray" heading */
+    --color-dropdown-label:  #cfc6ab;  /* "Customise Dice" / "Customise Tray" labels */
+    --color-modifier-label:  #cfc6ab;  /* "modifier" label beside the input */
+
+    /* Accent */
+    --color-accent:           #c9a24b;  /* hover borders, focus rings, tag highlights, roll total */
+    --color-accent-secondary: #8d7438;  /* history section title */
+
+    /* Picker die icons */
+    --color-die-stroke:  #16382b;  /* SVG stroke on die-type buttons */
+    --color-picker-icon: #f4ead2;  /* SVG fill on die-type buttons */
+
+    /* Dropdown */
+    --color-dropdown-bg: #1f4d3a;  /* <option> background in selects */
+
+    /* Tray surface */
+    --color-tray-bg:    #142e22;  /* tray surface background colour */
+    --tray-texture:     none;     /* tray surface texture overlay (set by JS) */
+
+    /* Generic buttons (picker die buttons, group chip buttons) */
+    --color-btn-bg:     #f4ead20f;
+    --color-btn-border: #f4ead238;
+    --color-btn-hover:  #f4ead224;
+
+    /* Roll button */
+    --color-roll-btn-top:  #c9a24b;  /* gradient top */
+    --color-roll-btn-bottom: #8d7438;  /* gradient bottom */
+    --color-roll-btn-text: #0f2a20;  /* label on the roll button */
+
+    /* Advantage button */
+    --color-adv-btn-bg:     #9acdaa1a;
+    --color-adv-btn-border: #00ff51bf;
+    --color-adv-btn-hover:  #9acdaa33;
+
+    /* Disadvantage button */
+    --color-disadv-btn-bg:     #c47a6a1a;
+    --color-disadv-btn-border: #ff1900bf;
+    --color-disadv-btn-hover:  #c47a6a33;
+
+    /* Clear button */
+    --color-btn-clear: #d8654a;  /* "clear tray" text and border */
+
+    /* Separators / dividers */
+    --color-separator:        #f4ead22e;  /* header underline */
+    --color-separator-subtle: #f4ead21a;  /* tray border, section dividers */
+
     /* Font families — swapped per tray */
     --font-title: 'Almendra', serif;
-    --font-ui: 'JetBrains Mono', monospace;
-    /* Button palette */
-    --btn-bg: rgba(244,234,210,0.06);
-    --btn-border: rgba(244,234,210,0.22);
-    --btn-hover-bg: rgba(244,234,210,0.14);
-    --roll-btn-grad-top: var(--accent);
-    --roll-btn-grad-bot: var(--accent-dim);
-    --adv-btn-bg: rgba(154,205,170,0.1);
-    --adv-btn-border: rgba(154,205,170,0.75);
-    --adv-btn-hover-bg: rgba(154,205,170,0.2);
-    --disadv-btn-bg: rgba(196,122,106,0.1);
-    --disadv-btn-border: rgba(196,122,106,0.75);
-    --disadv-btn-hover-bg: rgba(196,122,106,0.2);
-    /* Background pattern */
-    --separator: rgba(244,234,210,0.18);
-    --separator-dim: rgba(244,234,210,0.10);
-    /* Tray surface texture — separate from page background */
-    --tray-texture: none;
-    --tray-surface: #142e22;
+    --font-ui:    'JetBrains Mono', monospace;
   }
 
   * { box-sizing: border-box; }
@@ -70,7 +94,7 @@ SOFTWARE.
     margin: 0;
     min-height: 100vh;
     background: transparent;
-    color: var(--text-primary);
+    color: var(--color-text);
     font-family: var(--font-title);
     overflow-x: hidden;
     transition: color 0.3s ease;
@@ -91,7 +115,7 @@ SOFTWARE.
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid var(--separator);
+    border-bottom: 1px solid var(--color-separator);
     padding-bottom: 14px;
     margin-bottom: 20px;
     gap: 12px;
@@ -105,8 +129,8 @@ SOFTWARE.
     justify-content: flex-end;
   }
 
-  .tray-title { font-family: var(--font-title); font-size: 28px; font-weight: 700; margin: 0; color: var(--text-primary); flex-shrink: 0; transition: color 0.3s; }
-  .tray-title .accent { color: var(--accent); font-style: italic; font-weight: 600; }
+  .tray-title { font-family: var(--font-title); font-size: 28px; font-weight: 700; margin: 0; color: var(--color-title); flex-shrink: 0; transition: color 0.3s; }
+  .tray-title .accent { color: var(--color-accent); font-style: italic; font-weight: 600; }
 
   /* Colour scheme dropdown */
   .colour-scheme-wrapper {
@@ -122,21 +146,21 @@ SOFTWARE.
     align-items: center;
     font-family: var(--font-ui);
     font-size: 13px;
-    color: var(--text-muted);
+    color: var(--color-dropdown-label);
     pointer-events: none;  /* clicks pass through to the select beneath */
     white-space: nowrap;
     overflow: hidden;
     transition: color 0.15s;
     z-index: 1;
   }
-  .colour-scheme-wrapper:hover .colour-scheme-label { color: var(--text-muted); }
+  .colour-scheme-wrapper:hover .colour-scheme-label { color: var(--color-dropdown-label); }
 
   .colour-scheme-select {
     font-family: var(--font-ui);
     font-size: 13px;
     letter-spacing: 0;
     background-color: transparent;
-    border: 1px solid var(--text-muted);
+    border: 1px solid var(--color-text-secondary);
     /* Make the native selected-value text invisible — the overlay label shows instead */
     color: transparent;
     padding: 7px 28px 7px 10px;
@@ -151,17 +175,17 @@ SOFTWARE.
     min-width: 140px;
   }
   .colour-scheme-select:hover {
-    border-color: var(--accent);
-    background-color: var(--btn-hover-bg);
+    border-color: var(--color-accent);
+    background-color: var(--color-btn-hover);
   }
   .colour-scheme-select:focus {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--color-accent);
     outline-offset: 2px;
   }
   /* Style the select options (limited browser support but helpful where it works) */
   .colour-scheme-select option {
-    background: var(--dropdown-bg);
-    color: var(--text-primary);
+    background: var(--color-dropdown-bg);
+    color: var(--color-text);
     font-family: var(--font-ui);
     font-size: 13px;
   }
@@ -173,8 +197,8 @@ SOFTWARE.
     font-size: 15px;
     font-weight: 500;
     background: transparent;
-    border: 1px solid var(--text-muted);
-    color: var(--text-primary);
+    border: 1px solid var(--color-text-secondary);
+    color: var(--color-text);
     padding: 11px 18px 11px 13px;
     border-radius: 6px;
     cursor: pointer;
@@ -190,42 +214,42 @@ SOFTWARE.
     overflow: visible;
   }
   .picker-icon path {
-    fill: var(--text-primary);
+    fill: var(--color-picker-icon);
     fill-opacity: 0.85;
-    stroke: var(--die-edge);
+    stroke: var(--color-die-stroke);
     stroke-width: 1.4;
     stroke-linejoin: round;
     vector-effect: non-scaling-stroke;
   }
   .picker-btn:disabled .picker-icon path { fill-opacity: 0.5; }
-  .picker-btn:hover:not(:disabled) { background: var(--btn-hover-bg); border-color: var(--accent); color: var(--text-primary); }
+  .picker-btn:hover:not(:disabled) { background: var(--color-btn-hover); border-color: var(--color-accent); color: var(--color-text); }
   .picker-btn:active:not(:disabled) { transform: scale(0.96); }
   .picker-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-  .picker-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .picker-btn:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 
   .picker-clear {
     font-family: var(--font-ui);
     font-size: 12px;
     background: none;
-    border: 1px solid var(--destructive);
-    color: var(--destructive);
+    border: 1px solid var(--color-btn-clear);
+    color: var(--color-btn-clear);
     padding: 9px 14px;
     border-radius: 6px;
     cursor: pointer;
   }
   .modifier-row .picker-clear { margin-left: auto; }
-  .picker-clear:hover:not(:disabled) { background: rgba(216,101,74,0.12); }
+  .picker-clear:hover:not(:disabled) { background: #d8654a1f; }
   .picker-clear:disabled { opacity: 0.35; cursor: not-allowed; }
-  .picker-clear:focus-visible { outline: 2px solid var(--destructive); outline-offset: 2px; }
+  .picker-clear:focus-visible { outline: 2px solid var(--color-btn-clear); outline-offset: 2px; }
 
   .tray-surface {
     width: 100%;
-    background: var(--tray-surface);
-    border: 1px solid var(--separator-dim);
+    background: var(--color-tray-bg);
+    border: 1px solid var(--color-separator-subtle);
     border-radius: 14px;
     padding: 18px 14px 10px;
     min-height: 240px;
-    box-shadow: inset 0 2px 18px rgba(0,0,0,0.35);
+    box-shadow: inset 0 2px 18px #00000059;
     transition: border-color 0.3s, background 0.3s;
     position: relative;
     overflow: hidden;
@@ -252,7 +276,7 @@ SOFTWARE.
     justify-content: center;
     font-family: var(--font-ui);
     font-size: 13px;
-    color: var(--text-muted);
+    color: var(--color-text-secondary);
     text-align: center;
     padding: 60px 10px;
   }
@@ -277,27 +301,27 @@ SOFTWARE.
     gap: 8px;
     margin-top: 16px;
     padding-top: 14px;
-    border-top: 1px solid var(--separator-dim);
+    border-top: 1px solid var(--color-separator-subtle);
   }
   .group-chip {
     font-family: var(--font-ui);
     font-size: 15px;
-    color: var(--text-muted);
-    background: rgba(244,234,210,0.06);
-    border: 1px solid rgba(244,234,210,0.16);
+    color: var(--color-text-secondary);
+    background: #f4ead20f;
+    border: 1px solid #f4ead229;
     border-radius: 6px;
     padding: 5px 10px;
     display: flex;
     align-items: center;
     gap: 8px;
   }
-  .group-chip .tag { color: var(--accent); font-weight: 700; }
+  .group-chip .tag { color: var(--color-accent); font-weight: 700; }
   .group-chip button {
     width: 26px; height: 26px;
     border-radius: 5px;
-    border: 1px solid rgba(244,234,210,0.25);
-    background: rgba(244,234,210,0.05);
-    color: var(--text-primary);
+    border: 1px solid #f4ead240;
+    background: #f4ead20d;
+    color: var(--color-text);
     font-family: var(--font-ui);
     font-size: 16px;
     line-height: 1;
@@ -305,7 +329,7 @@ SOFTWARE.
     display: flex; align-items: center; justify-content: center;
     padding: 0;
   }
-  .group-chip button:hover { background: rgba(244,234,210,0.15); }
+  .group-chip button:hover { background: #f4ead226; }
 
   /* Count label right-aligned, Roll button centred, both on same row */
   .count-label-row {
@@ -328,7 +352,7 @@ SOFTWARE.
     font-size: 11px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--text-muted);
+    color: var(--color-text-secondary);
   }
 
   .adv-row {
@@ -345,38 +369,38 @@ SOFTWARE.
     font-family: var(--font-title);
     font-weight: 700;
     font-size: 18px;
-    background: linear-gradient(180deg, var(--roll-btn-grad-top), var(--roll-btn-grad-bot));
-    color: var(--roll-btn-text);
+    background: linear-gradient(180deg, var(--color-roll-btn-top), var(--color-roll-btn-bottom));
+    color: var(--color-roll-btn-text);
     border: none;
     border-radius: 10px;
     padding: 14px 30px;
     cursor: pointer;
-    box-shadow: 0 3px 0 rgba(0,0,0,0.3), 0 6px 14px rgba(0,0,0,0.25);
+    box-shadow: 0 3px 0 #0000004c, 0 6px 14px #00000040;
     transition: transform 0.1s, box-shadow 0.1s, background 0.3s;
   }
   .roll-btn:hover:not(:disabled) { transform: translateY(-1px); }
-  .roll-btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.3), 0 2px 6px rgba(0,0,0,0.25); }
+  .roll-btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 #0000004c, 0 2px 6px #00000040; }
   .roll-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-  .roll-btn:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 3px; }
+  .roll-btn:focus-visible { outline: 2px solid var(--color-text); outline-offset: 3px; }
 
   .adv-btn {
     font-family: var(--font-ui);
     font-size: 13px;
     font-weight: 600;
-    background: var(--adv-btn-bg);
-    border: 1.5px solid var(--adv-btn-border);
-    color: var(--text-primary);
+    background: var(--color-adv-btn-bg);
+    border: 1.5px solid var(--color-adv-btn-border);
+    color: var(--color-text);
     padding: 11px 18px;
     border-radius: 8px;
     cursor: pointer;
     transition: background 0.15s, border-color 0.15s, transform 0.1s, color 0.3s;
   }
-  .adv-btn:hover:not(:disabled) { background: var(--adv-btn-hover-bg); border-color: var(--adv-btn-border); filter: brightness(1.2); }
+  .adv-btn:hover:not(:disabled) { background: var(--color-adv-btn-hover); border-color: var(--color-adv-btn-border); filter: brightness(1.2); }
   .adv-btn:active:not(:disabled) { transform: translateY(2px); }
-  .adv-btn:disabled { opacity: 0.4; cursor: not-allowed; background: var(--btn-bg); border-color: var(--btn-border); }
-  .adv-btn.disadv { background: var(--disadv-btn-bg); border-color: var(--disadv-btn-border); }
-  .adv-btn.disadv:hover:not(:disabled) { background: var(--disadv-btn-hover-bg); border-color: var(--disadv-btn-border); filter: brightness(1.2); }
-  .adv-btn:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 3px; }
+  .adv-btn:disabled { opacity: 0.4; cursor: not-allowed; background: var(--color-btn-bg); border-color: var(--color-btn-border); }
+  .adv-btn.disadv { background: var(--color-disadv-btn-bg); border-color: var(--color-disadv-btn-border); }
+  .adv-btn.disadv:hover:not(:disabled) { background: var(--color-disadv-btn-hover); border-color: var(--color-disadv-btn-border); filter: brightness(1.2); }
+  .adv-btn:focus-visible { outline: 2px solid var(--color-text); outline-offset: 3px; }
 
   .modifier-row {
     width: 100%;
@@ -390,8 +414,8 @@ SOFTWARE.
     display: flex;
     align-items: center;
     gap: 10px;
-    background: rgba(244,234,210,0.06);
-    border: 1px solid rgba(244,234,210,0.22);
+    background: #f4ead20f;
+    border: 1px solid #f4ead238;
     border-radius: 10px;
     padding: 8px 14px;
     cursor: text;
@@ -401,25 +425,25 @@ SOFTWARE.
     font-size: 11px;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: var(--text-muted);
+    color: var(--color-modifier-label);
   }
   .modifier-sign-btn {
     font-family: var(--font-ui);
     font-size: 15px;
     font-weight: 600;
     line-height: 1;
-    background: rgba(244,234,210,0.08);
-    border: 1px solid rgba(244,234,210,0.28);
-    color: var(--text-muted);
+    background: #f4ead214;
+    border: 1px solid #f4ead247;
+    color: var(--color-text-secondary);
     border-radius: 6px;
     padding: 8px 11px;
     cursor: pointer;
     transition: background 0.15s, border-color 0.15s, color 0.15s;
   }
-  .modifier-sign-btn:hover { background: rgba(244,234,210,0.16); border-color: var(--accent); color: var(--text-primary); }
+  .modifier-sign-btn:hover { background: #f4ead229; border-color: var(--color-accent); color: var(--color-text); }
   .modifier-sign-btn:active { transform: translateY(1px); }
-  .modifier-sign-btn.is-negative { border-color: rgba(196,122,106,0.7); color: var(--text-primary); }
-  .modifier-sign-btn.is-positive { border-color: rgba(154,205,170,0.7); color: var(--text-primary); }
+  .modifier-sign-btn.is-negative { border-color: #c47a6ab2; color: var(--color-text); }
+  .modifier-sign-btn.is-positive { border-color: #9acdaab2; color: var(--color-text); }
   .modifier-sign-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
   .modifier-input {
@@ -427,17 +451,17 @@ SOFTWARE.
     font-family: var(--font-ui);
     font-size: 16px;
     font-weight: 500;
-    background: rgba(244,234,210,0.08);
+    background: #f4ead214;
     border: none;
-    border-bottom: 1.5px solid rgba(244,234,210,0.35);
+    border-bottom: 1.5px solid #f4ead259;
     border-radius: 4px 4px 0 0;
-    color: var(--text-primary);
+    color: var(--color-text);
     text-align: left;
     padding: 3px 2px 3px 6px;
   }
-  .modifier-input:focus { outline: none; border-bottom-color: var(--accent); background: rgba(244,234,210,0.13); }
-  .modifier-input::placeholder { color: var(--text-muted); opacity: 0.6; }
-  .modifier-box:has(.modifier-input:focus) { border-color: var(--accent); }
+  .modifier-input:focus { outline: none; border-bottom-color: var(--color-accent); background: #f4ead221; }
+  .modifier-input::placeholder { color: var(--color-text-secondary); opacity: 0.6; }
+  .modifier-box:has(.modifier-input:focus) { border-color: var(--color-accent); }
   .modifier-box:has(.modifier-input:disabled) { opacity: 0.5; cursor: not-allowed; }
 
   .roll-total {
@@ -445,34 +469,34 @@ SOFTWARE.
     text-align: center;
     padding-top: 16px;
     margin-top: 8px;
-    border-top: 1px solid var(--separator-dim);
+    border-top: 1px solid var(--color-separator-subtle);
     min-height: 64px;
   }
   .roll-total .total-number {
     font-family: 'Almendra', serif;
     font-weight: 700;
     font-size: 44px;
-    color: var(--accent);
+    color: var(--color-accent);
     line-height: 1;
     display: block;
   }
   .roll-total .total-number.is-placeholder {
-    color: var(--text-muted);
+    color: var(--color-text-secondary);
     opacity: 0.3;
   }
   .roll-total .total-caption {
     font-family: var(--font-ui);
     font-size: 12px;
     letter-spacing: 0.04em;
-    color: var(--text-muted);
+    color: var(--color-text-secondary);
     display: block;
     margin-top: 4px;
   }
 
-  .history { width: 100%; margin-top: 22px; font-family: var(--font-ui); font-size: 11.5px; color: var(--text-muted); }
-  .history-title { text-transform: uppercase; letter-spacing: 0.08em; font-size: 10px; color: var(--accent-dim); margin-bottom: 8px; }
-  .history-row { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; border-bottom: 1px solid var(--separator-dim); }
-  .history-row .h-total { color: var(--text-primary); flex-shrink: 0; }
+  .history { width: 100%; margin-top: 22px; font-family: var(--font-ui); font-size: 11.5px; color: var(--color-text-secondary); }
+  .history-title { text-transform: uppercase; letter-spacing: 0.08em; font-size: 10px; color: var(--color-accent-secondary); margin-bottom: 8px; }
+  .history-row { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; border-bottom: 1px solid var(--color-separator-subtle); }
+  .history-row .h-total { color: var(--color-text); flex-shrink: 0; }
   .history-row .h-summary { opacity: 0.8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   @media (max-width: 480px) {
@@ -486,7 +510,7 @@ SOFTWARE.
 <div id="bg-layer" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;background-size:cover;background-position:center;background-repeat:no-repeat;transition:background-image 0.3s ease;"></div>
 <div class="tray-root" style="position:relative;z-index:1;">
   <div class="tray-header">
-    <h1 class="tray-title">Dice<span class="accent">Tray</span></h1>
+    <h1 class="tray-title">Dice<span class="color-accent">Tray</span></h1>
     <div class="tray-controls">
       <div class="colour-scheme-wrapper">
         <span class="colour-scheme-label" aria-hidden="true">Customise Dice</span>
@@ -570,7 +594,7 @@ const COLOUR_SCHEMES = {
     numeral:     '#000000',
     numeralDark: '#f4ead2',
     stroke:      '#000000',
-    strokeDark:  'rgba(244,234,210,0.55)',
+    strokeDark:  '#f4ead28c',
   },
   amethyst: {
     // Primary: deep indigo body, sky-blue numerals
@@ -579,8 +603,8 @@ const COLOUR_SCHEMES = {
     bodyDark:    '#7dd3fc',
     numeral:     '#7dd3fc',
     numeralDark: '#1e1254',
-    stroke:      'rgba(125,211,252,0.45)',
-    strokeDark:  'rgba(30,18,84,0.6)',
+    stroke:      '#7dd3fc73',
+    strokeDark:  '#1e125499',
   },
   crimson: {
     // Primary: deep crimson body (#63001a), bright gold numerals
@@ -589,8 +613,8 @@ const COLOUR_SCHEMES = {
     bodyDark:    '#d4a017',
     numeral:     '#f5c842',
     numeralDark: '#63001a',
-    stroke:      'rgba(245,200,66,0.45)',
-    strokeDark:  'rgba(99,0,26,0.6)',
+    stroke:      '#f5c84273',
+    strokeDark:  '#63001a99',
   },
   midnight: {
     // Primary: deep navy body, pale silver numerals
@@ -599,8 +623,8 @@ const COLOUR_SCHEMES = {
     bodyDark:    '#c8d8f0',
     numeral:     '#c8d8f0',
     numeralDark: '#0d1b3e',
-    stroke:      'rgba(200,216,240,0.45)',
-    strokeDark:  'rgba(13,27,62,0.6)',
+    stroke:      '#c8d8f073',
+    strokeDark:  '#0d1b3e99',
   },
   forest: {
     // Primary: dark forest green body, warm copper numerals
@@ -609,8 +633,8 @@ const COLOUR_SCHEMES = {
     bodyDark:    '#FE9A37',
     numeral:     '#FE9A37',
     numeralDark: '#0f2d1a',
-    stroke:      'rgba(200,121,65,0.45)',
-    strokeDark:  'rgba(15,45,26,0.6)',
+    stroke:      '#c8794173',
+    strokeDark:  '#0f2d1a99',
   },
   obsidian: {
     // Primary: near-black body, rich amber numerals
@@ -619,8 +643,8 @@ const COLOUR_SCHEMES = {
     bodyDark:    '#e8a020',
     numeral:     '#e8a020',
     numeralDark: '#181218',
-    stroke:      'rgba(232,160,32,0.45)',
-    strokeDark:  'rgba(24,18,24,0.7)',
+    stroke:      '#e8a02073',
+    strokeDark:  '#181218b2',
   },
   slate: {
     // Primary: dark slate body, bright jade numerals
@@ -629,8 +653,8 @@ const COLOUR_SCHEMES = {
     bodyDark:    '#00a86b',
     numeral:     '#00a86b',
     numeralDark: '#1e2a2e',
-    stroke:      'rgba(52,211,153,0.45)',
-    strokeDark:  'rgba(30,42,46,0.7)',
+    stroke:      '#34d39973',
+    strokeDark:  '#1e2a2eb2',
   },
   burgundy: {
     // Primary: deep wine body, warm parchment numerals
@@ -639,8 +663,8 @@ const COLOUR_SCHEMES = {
     bodyDark:    '#f0dfc0',
     numeral:     '#f0dfc0',
     numeralDark: '#3b0a1e',
-    stroke:      'rgba(240,223,192,0.45)',
-    strokeDark:  'rgba(59,10,30,0.6)',
+    stroke:      '#f0dfc073',
+    strokeDark:  '#3b0a1e99',
   },
   prussian: {
     // Primary: dusty rose body, prussian blue numerals
@@ -649,8 +673,8 @@ const COLOUR_SCHEMES = {
     bodyDark:    '#003153',
     numeral:     '#003153',
     numeralDark: '#e8a0a8',
-    stroke:      'rgba(13,43,64,0.6)',
-    strokeDark:  'rgba(232,160,168,0.45)',
+    stroke:      '#0d2b4099',
+    strokeDark:  '#e8a0a873',
   },
   teal: {
     // Primary: deep teal body, warm coral numerals
@@ -659,8 +683,8 @@ const COLOUR_SCHEMES = {
     bodyDark:    '#f07850',
     numeral:     '#f07850',
     numeralDark: '#0a2e2e',
-    stroke:      'rgba(240,120,80,0.45)',
-    strokeDark:  'rgba(10,46,46,0.7)',
+    stroke:      '#f0785073',
+    strokeDark:  '#0a2e2eb2',
   },
   charcoal: {
     // Primary: dark charcoal body, acid lime numerals
@@ -669,8 +693,8 @@ const COLOUR_SCHEMES = {
     bodyDark:    '#a3e635',
     numeral:     '#a3e635',
     numeralDark: '#1c1c1c',
-    stroke:      'rgba(163,230,53,0.45)',
-    strokeDark:  'rgba(28,28,28,0.7)',
+    stroke:      '#a3e63573',
+    strokeDark:  '#1c1c1cb2',
   },
 };
 
@@ -2241,171 +2265,189 @@ document.getElementById('dice-canvas').addEventListener('click', (e) => {
 const TRAY_THEMES = {
   'green-felt': {
     label: 'Green Felt',
-    'dropdown-bg': '#1f4d3a',
-    'die-edge': '#16382b',
-    'text-primary': '#f4ead2',
-    'text-muted': '#cfc6ab',
-    'accent': '#c9a24b',
-    'accent-dim': '#8d7438',
-    'roll-btn-text': '#0f2a20',
-    'destructive': '#d8654a',
+    'color-text':            '#f4ead2',
+    'color-text-secondary':  '#cfc6ab',
+    'color-title':           '#f4ead2',
+    'color-dropdown-label':  '#cfc6ab',
+    'color-modifier-label':  '#cfc6ab',
+    'color-accent':          '#c9a24b',
+    'color-accent-secondary':'#8d7438',
+    'color-die-stroke':      '#16382b',
+    'color-picker-icon':     '#f4ead2',
+    'color-dropdown-bg':     '#1f4d3a',
+    'color-tray-bg':         '#0e451c',
+    'color-btn-clear':       '#d8654a',
+    'color-btn-bg':          '#f4ead20f',
+    'color-btn-border':      '#f4ead238',
+    'color-btn-hover':       '#f4ead224',
+    'color-roll-btn-top':    '#c9a24b',
+    'color-roll-btn-bottom': '#8d7438',
+    'color-roll-btn-text':   '#0f2a20',
+    'color-adv-btn-bg':      '#9acdaa1a',
+    'color-adv-btn-border':  '#9acdaabf',
+    'color-adv-btn-hover':   '#9acdaa33',
+    'color-disadv-btn-bg':   '#c47a6a1a',
+    'color-disadv-btn-border':'#c47a6abf',
+    'color-disadv-btn-hover':'#c47a6a33',
+    'color-separator':       '#f4ead22e',
+    'color-separator-subtle':'#f4ead21a',
     'font-title': "'Almendra', serif",
-    'font-ui': "'JetBrains Mono', monospace",
-    'btn-bg': 'rgba(244,234,210,0.06)',
-    'btn-border': 'rgba(244,234,210,0.22)',
-    'btn-hover-bg': 'rgba(244,234,210,0.14)',
-    'roll-btn-grad-top': '#c9a24b',
-    'roll-btn-grad-bot': '#8d7438',
-    'roll-btn-text': '#0f2a20',
-    'adv-btn-bg': 'rgba(154,205,170,0.1)',
-    'adv-btn-border': 'rgba(154,205,170,0.75)',
-    'adv-btn-hover-bg': 'rgba(154,205,170,0.2)',
-    'disadv-btn-bg': 'rgba(196,122,106,0.1)',
-    'disadv-btn-border': 'rgba(196,122,106,0.75)',
-    'disadv-btn-hover-bg': 'rgba(196,122,106,0.2)',
-    'separator': 'rgba(244,234,210,0.18)',
-    'separator-dim': 'rgba(244,234,210,0.10)',
-    'tray-surface': '#0e451c',
+    'font-ui':    "'JetBrains Mono', monospace",
   },
   'midnight-velvet': {
     label: 'Midnight Velvet',
-    'dropdown-bg': '#0d0820',
-    'die-edge': '#06041a',
-    'text-primary': '#e8d8ff',
-    'text-muted': '#a898cc',
-    'accent': '#b090f0',
-    'accent-dim': '#7060b0',
-    'roll-btn-text': '#0a0618',
-    'destructive': '#c060d0',
+    'color-text':            '#e8d8ff',
+    'color-text-secondary':  '#a898cc',
+    'color-title':           '#e8d8ff',
+    'color-dropdown-label':  '#a898cc',
+    'color-modifier-label':  '#a898cc',
+    'color-accent':          '#b090f0',
+    'color-accent-secondary':'#7060b0',
+    'color-die-stroke':      '#06041a',
+    'color-picker-icon':     '#e8d8ff',
+    'color-dropdown-bg':     '#0d0820',
+    'color-tray-bg':         '#2a1733',
+    'color-btn-clear':       '#c060d0',
+    'color-btn-bg':          '#b4a0ff12',
+    'color-btn-border':      '#b090f047',
+    'color-btn-hover':       '#b090f029',
+    'color-roll-btn-top':    '#b090f0',
+    'color-roll-btn-bottom': '#7060b0',
+    'color-roll-btn-text':   '#0a0618',
+    'color-adv-btn-bg':      '#64b4ff1a',
+    'color-adv-btn-border':  '#64b4ffa6',
+    'color-adv-btn-hover':   '#64b4ff38',
+    'color-disadv-btn-bg':   '#c850dc1a',
+    'color-disadv-btn-border':'#c850dca6',
+    'color-disadv-btn-hover':'#c850dc38',
+    'color-separator':       '#b090f038',
+    'color-separator-subtle':'#b090f01c',
     'font-title': "'Uncial Antiqua', cursive",
-    'font-ui': "'Share Tech Mono', monospace",
-    'btn-bg': 'rgba(180,160,255,0.07)',
-    'btn-border': 'rgba(176,144,240,0.28)',
-    'btn-hover-bg': 'rgba(176,144,240,0.16)',
-    'roll-btn-grad-top': '#b090f0',
-    'roll-btn-grad-bot': '#7060b0',
-    'roll-btn-text': '#0a0618',
-    'adv-btn-bg': 'rgba(100,180,255,0.1)',
-    'adv-btn-border': 'rgba(100,180,255,0.65)',
-    'adv-btn-hover-bg': 'rgba(100,180,255,0.22)',
-    'disadv-btn-bg': 'rgba(200,80,220,0.1)',
-    'disadv-btn-border': 'rgba(200,80,220,0.65)',
-    'disadv-btn-hover-bg': 'rgba(200,80,220,0.22)',
-    'separator': 'rgba(176,144,240,0.22)',
-    'separator-dim': 'rgba(176,144,240,0.11)',
-    'tray-surface': '#2a1733',
+    'font-ui':    "'Share Tech Mono', monospace",
   },
   'parchment': {
     label: 'Ancient Parchment',
-    'dropdown-bg': '#c8a870',
-    'die-edge': '#a88850',
-    'text-primary': '#2a1800',
-    'text-muted': '#5a3800',
-    'accent': '#6a3010',
-    'accent-dim': '#8a5020',
-    'roll-btn-text': '#f8ecd0',
-    'destructive': '#c04010',
+    'color-text':            '#2a1800',
+    'color-text-secondary':  '#5a3800',
+    'color-title':           '#2a1800',
+    'color-dropdown-label':  '#5a3800',
+    'color-modifier-label':  '#5a3800',
+    'color-accent':          '#6a3010',
+    'color-accent-secondary':'#8a5020',
+    'color-die-stroke':      '#a88850',
+    'color-picker-icon':     '#2a1800',
+    'color-dropdown-bg':     '#c8a870',
+    'color-tray-bg':         '#e0bf77',
+    'color-btn-clear':       '#c04010',
+    'color-btn-bg':          '#2a180014',
+    'color-btn-border':      '#6a301059',
+    'color-btn-hover':       '#6a301029',
+    'color-roll-btn-top':    '#6a3010',
+    'color-roll-btn-bottom': '#8a5020',
+    'color-roll-btn-text':   '#f8ecd0',
+    'color-adv-btn-bg':      '#2864281a',
+    'color-adv-btn-border':  '#28642899',
+    'color-adv-btn-hover':   '#28642833',
+    'color-disadv-btn-bg':   '#a028141a',
+    'color-disadv-btn-border':'#a0281499',
+    'color-disadv-btn-hover':'#a0281433',
+    'color-separator':       '#6a301040',
+    'color-separator-subtle':'#6a301021',
     'font-title': "'IM Fell English', serif",
-    'font-ui': "'Courier Prime', monospace",
-    'btn-bg': 'rgba(42,24,0,0.08)',
-    'btn-border': 'rgba(106,48,16,0.35)',
-    'btn-hover-bg': 'rgba(106,48,16,0.16)',
-    'roll-btn-grad-top': '#6a3010',
-    'roll-btn-grad-bot': '#8a5020',
-    'roll-btn-text': '#f8ecd0',
-    'adv-btn-bg': 'rgba(40,100,40,0.1)',
-    'adv-btn-border': 'rgba(40,100,40,0.6)',
-    'adv-btn-hover-bg': 'rgba(40,100,40,0.2)',
-    'disadv-btn-bg': 'rgba(160,40,20,0.1)',
-    'disadv-btn-border': 'rgba(160,40,20,0.6)',
-    'disadv-btn-hover-bg': 'rgba(160,40,20,0.2)',
-    'separator': 'rgba(106,48,16,0.25)',
-    'separator-dim': 'rgba(106,48,16,0.13)',
-    'tray-surface': '#e0bf77',
+    'font-ui':    "'Courier Prime', monospace",
   },
   'weathered-slate': {
     label: 'Weathered Slate',
-    'dropdown-bg': '#2a2e34',
-    'die-edge': '#046982',
-    'text-primary': '#e8eef4',
-    'text-muted': '#9aaab8',
-    'accent': '#046982',
-    'accent-dim': '#3a9880',
-    'roll-btn-text': '#0e1418',
-    'destructive': '#e06050',
+    'color-text':            '#e8eef4',
+    'color-text-secondary':  '#9aaab8',
+    'color-title':           '#e8eef4',
+    'color-dropdown-label':  '#9aaab8',
+    'color-modifier-label':  '#9aaab8',
+    'color-accent':          '#046982',
+    'color-accent-secondary':'#3a9880',
+    'color-die-stroke':      '#046982',
+    'color-picker-icon':     '#e8eef4',
+    'color-dropdown-bg':     '#2a2e34',
+    'color-tray-bg':         '#141820',
+    'color-btn-clear':       '#e06050',
+    'color-btn-bg':          '#e8eef40f',
+    'color-btn-border':      '#60c8b047',
+    'color-btn-hover':       '#60c8b024',
+    'color-roll-btn-top':    '#60c8b0',
+    'color-roll-btn-bottom': '#3a9880',
+    'color-roll-btn-text':   '#0e1418',
+    'color-adv-btn-bg':      '#50c8a01a',
+    'color-adv-btn-border':  '#50c8a0a6',
+    'color-adv-btn-hover':   '#50c8a038',
+    'color-disadv-btn-bg':   '#e060501a',
+    'color-disadv-btn-border':'#e06050a6',
+    'color-disadv-btn-hover':'#e0605038',
+    'color-separator':       '#60c8b038',
+    'color-separator-subtle':'#60c8b01c',
     'font-title': "'Rajdhani', sans-serif",
-    'font-ui': "'Share Tech Mono', monospace",
-    'btn-bg': 'rgba(232,238,244,0.06)',
-    'btn-border': 'rgba(96,200,176,0.28)',
-    'btn-hover-bg': 'rgba(96,200,176,0.14)',
-    'roll-btn-grad-top': '#60c8b0',
-    'roll-btn-grad-bot': '#3a9880',
-    'roll-btn-text': '#0e1418',
-    'adv-btn-bg': 'rgba(80,200,160,0.1)',
-    'adv-btn-border': 'rgba(80,200,160,0.65)',
-    'adv-btn-hover-bg': 'rgba(80,200,160,0.22)',
-    'disadv-btn-bg': 'rgba(224,96,80,0.1)',
-    'disadv-btn-border': 'rgba(224,96,80,0.65)',
-    'disadv-btn-hover-bg': 'rgba(224,96,80,0.22)',
-    'separator': 'rgba(96,200,176,0.22)',
-    'separator-dim': 'rgba(96,200,176,0.11)',
-    'tray-surface': '#141820',
+    'font-ui':    "'Share Tech Mono', monospace",
   },
   'distant-galaxy': {
     label: 'Distant Galaxy',
-    'dropdown-bg': '#061828',
-    'die-edge': '#1888a8',
-    'text-primary': '#c8f0f8',
-    'text-muted': '#7aaabb',
-    'accent': '#30c8e8',
-    'accent-dim': '#1888a8',
-    'roll-btn-text': '#020810',
-    'destructive': '#4080e0',
+    'color-text':            '#c8f0f8',
+    'color-text-secondary':  '#7aaabb',
+    'color-title':           '#c8f0f8',
+    'color-dropdown-label':  '#7aaabb',
+    'color-modifier-label':  '#7aaabb',
+    'color-accent':          '#30c8e8',
+    'color-accent-secondary':'#1888a8',
+    'color-die-stroke':      '#1888a8',
+    'color-picker-icon':     '#c8f0f8',
+    'color-dropdown-bg':     '#061828',
+    'color-tray-bg':         '#020c1a',
+    'color-btn-clear':       '#4080e0',
+    'color-btn-bg':          '#30c8e80f',
+    'color-btn-border':      '#30c8e838',
+    'color-btn-hover':       '#30c8e824',
+    'color-roll-btn-top':    '#30c8e8',
+    'color-roll-btn-bottom': '#1888a8',
+    'color-roll-btn-text':   '#020810',
+    'color-adv-btn-bg':      '#30c8e81a',
+    'color-adv-btn-border':  '#30c8e899',
+    'color-adv-btn-hover':   '#30c8e838',
+    'color-disadv-btn-bg':   '#4080e01a',
+    'color-disadv-btn-border':'#4080e099',
+    'color-disadv-btn-hover':'#4080e038',
+    'color-separator':       '#30c8e833',
+    'color-separator-subtle':'#30c8e81a',
     'font-title': "'Cinzel', serif",
-    'font-ui': "'Share Tech Mono', monospace",
-    'btn-bg': 'rgba(48,200,232,0.06)',
-    'btn-border': 'rgba(48,200,232,0.22)',
-    'btn-hover-bg': 'rgba(48,200,232,0.14)',
-    'roll-btn-grad-top': '#30c8e8',
-    'roll-btn-grad-bot': '#1888a8',
-    'roll-btn-text': '#020810',
-    'adv-btn-bg': 'rgba(48,200,232,0.1)',
-    'adv-btn-border': 'rgba(48,200,232,0.6)',
-    'adv-btn-hover-bg': 'rgba(48,200,232,0.22)',
-    'disadv-btn-bg': 'rgba(64,128,224,0.1)',
-    'disadv-btn-border': 'rgba(64,128,224,0.6)',
-    'disadv-btn-hover-bg': 'rgba(64,128,224,0.22)',
-    'separator': 'rgba(48,200,232,0.20)',
-    'separator-dim': 'rgba(48,200,232,0.10)',
-    'tray-surface': '#020c1a',
+    'font-ui':    "'Share Tech Mono', monospace",
   },
   'ivory-marble': {
     label: 'Ivory Marble',
-    'dropdown-bg': '#e8e0d4',
-    'die-edge': '#ffffff',
-    'text-primary': '#1a1410',
-    'text-muted': '#96475c',
-    'accent': '#63001a',
-    'accent-dim': '#96475c',
-    'roll-btn-text': '#63001a',
-    'destructive': '#63001a',
+    'color-text':            '#1a1410',
+    'color-text-secondary':  '#96475c',
+    'color-title':           '#1a1410',
+    'color-dropdown-label':  '#96475c',
+    'color-modifier-label':  '#96475c',
+    'color-accent':          '#63001a',
+    'color-accent-secondary':'#96475c',
+    'color-die-stroke':      '#ffffff',
+    'color-picker-icon':     '#1a1410',
+    'color-dropdown-bg':     '#e8e0d4',
+    'color-tray-bg':         '#ddd6c8',
+    'color-btn-clear':       '#63001a',
+    'color-btn-bg':          '#1a141012',
+    'color-btn-border':      '#63001a4c',
+    'color-btn-hover':       '#63001a24',
+    'color-roll-btn-top':    '#63001a',
+    'color-roll-btn-bottom': '#63001a',
+    'color-roll-btn-text':   '#f8f0e8',
+    'color-adv-btn-bg':      '#1e641e14',
+    'color-adv-btn-border':  '#1e641e8c',
+    'color-adv-btn-hover':   '#1e641e2e',
+    'color-disadv-btn-bg':   '#8a1a1014',
+    'color-disadv-btn-border':'#8a1a108c',
+    'color-disadv-btn-hover':'#8a1a102e',
+    'color-separator':       '#2a1e8038',
+    'color-separator-subtle':'#2a1e801c',
     'font-title': "'Playfair Display', serif",
-    'font-ui': "'Courier Prime', monospace",
-    'btn-bg': 'rgba(26,20,16,0.07)',
-    'btn-border': 'rgba(99,0,26,0.3)',
-    'btn-hover-bg': 'rgba(99,0,26,0.14)',
-    'roll-btn-grad-top': '#63001a',
-    'roll-btn-grad-bot': '#63001a',
-    'roll-btn-text': '#f8f0e8',
-    'adv-btn-bg': 'rgba(30,100,30,0.08)',
-    'adv-btn-border': 'rgba(30,100,30,0.55)',
-    'adv-btn-hover-bg': 'rgba(30,100,30,0.18)',
-    'disadv-btn-bg': 'rgba(138,26,16,0.08)',
-    'disadv-btn-border': 'rgba(138,26,16,0.55)',
-    'disadv-btn-hover-bg': 'rgba(138,26,16,0.18)',
-    'separator': 'rgba(42,30,128,0.22)',
-    'separator-dim': 'rgba(42,30,128,0.11)',
-    'tray-surface': '#ddd6c8',
+    'font-ui':    "'Courier Prime', monospace",
   },
 };
 
@@ -2414,13 +2456,16 @@ function applyTrayTheme(themeKey) {
   if (!theme) return;
   const root = document.documentElement;
   const varNames = [
-    'dropdown-bg','die-edge','text-primary','text-muted','accent','accent-dim','destructive',
+    'color-text','color-text-secondary','color-title','color-dropdown-label','color-modifier-label',
+    'color-accent','color-accent-secondary',
+    'color-die-stroke','color-picker-icon',
+    'color-dropdown-bg','color-tray-bg',
+    'color-btn-bg','color-btn-border','color-btn-hover','color-btn-clear',
+    'color-roll-btn-top','color-roll-btn-bottom','color-roll-btn-text',
+    'color-adv-btn-bg','color-adv-btn-border','color-adv-btn-hover',
+    'color-disadv-btn-bg','color-disadv-btn-border','color-disadv-btn-hover',
+    'color-separator','color-separator-subtle',
     'font-title','font-ui',
-    'btn-bg','btn-border','btn-hover-bg',
-    'roll-btn-grad-top','roll-btn-grad-bot','roll-btn-text',
-    'adv-btn-bg','adv-btn-border','adv-btn-hover-bg',
-    'disadv-btn-bg','disadv-btn-border','disadv-btn-hover-bg',
-    'separator','separator-dim','tray-surface',
   ];
   varNames.forEach(v => {
     if (theme[v] !== undefined) root.style.setProperty('--' + v, theme[v]);
@@ -2434,8 +2479,8 @@ function applyTrayTheme(themeKey) {
 
   // Update the option background in the colour-scheme-selects to match
   document.querySelectorAll('.colour-scheme-select option').forEach(opt => {
-    opt.style.background = theme['dropdown-bg'];
-    opt.style.color = theme['text-primary'];
+    opt.style.background = theme['color-dropdown-bg'];
+    opt.style.color = theme['color-text'];
   });
 }
 
