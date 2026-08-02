@@ -72,7 +72,7 @@ SOFTWARE.
     --color-adv-btn-hover:  #9acdaa33;
 
     /* Disadvantage button */
-    --color-disadv-btn-bg:     #ff2f0037;
+    --color-disadv-btn-bg:     #ff2f00a3;
     --color-disadv-btn-border: #ff2f00bf;
     --color-disadv-btn-hover:  #c47a6a33;
 
@@ -2054,32 +2054,39 @@ function rollAdvantage(keepHigh) {
 
       advCreamRole = winningRole;
 
-      // Set dice to winners so scoreAndRecordRoll reads the right values.
-      // Do NOT call layoutDiceGrid() yet — the winners are still at their
-      // doubled-grid screenX/Y positions, which runCollapseAnimation needs as
-      // its start positions.  layoutDiceGrid() runs after the collapse finishes.
+      // Score using the winners' values (scoreAndRecordRoll reads from dice,
+      // so temporarily point dice at winners just for scoring, then restore
+      // the full doubled set so the render loop keeps losers visible).
+      const savedDice = dice;
       dice = winners;
-      renderDiceCanvas();
       scoreAndRecordRoll(modifier);
+      dice = savedDice;
+      renderDiceCanvas();
 
-      // Pause, then align the winning dice to face the viewer …
+      // Pause, then align BOTH winners and losers to face the viewer so the
+      // player can read every result before the losing group is removed.
       setTimeout(() => {
-        alignDiceToViewer(winners, 350, () => {
-          // … then run the collapse (winners slide together, losers fade out).
-          const COLLAPSE_MS = 420;
-          runCollapseAnimation(winners, losers, COLLAPSE_MS, () => {
-            layoutDiceGrid();
-            renderDiceCanvas();
+        alignDiceToViewer(dice, 350, () => {
+          // Brief pause so the player can read both results, then collapse.
+          setTimeout(() => {
+            // Now switch to winners-only so runCollapseAnimation's start
+            // positions are correct and layoutDiceGrid snaps cleanly after.
+            dice = winners;
+            const COLLAPSE_MS = 650;
+            runCollapseAnimation(winners, losers, COLLAPSE_MS, () => {
+              layoutDiceGrid();
+              renderDiceCanvas();
 
-            rolling = false;
-            rollBtn.disabled = false;
-            advBtn.disabled = false;
-            disadvBtn.disabled = false;
-            refreshPickerDisabled();
-            refreshAdvantageButtons();
-            setGroupChipsDisabled(false);
-            setModifierDisabled(false);
-          });
+              rolling = false;
+              rollBtn.disabled = false;
+              advBtn.disabled = false;
+              disadvBtn.disabled = false;
+              refreshPickerDisabled();
+              refreshAdvantageButtons();
+              setGroupChipsDisabled(false);
+              setModifierDisabled(false);
+            });
+          }, 600);
         });
       }, 380);
     }, PAUSE_MS);
@@ -2297,7 +2304,7 @@ const TRAY_THEMES = {
     'color-adv-btn-bg':      '#20e45eb6',
     'color-adv-btn-border':  '#00ff51bf',
     'color-adv-btn-hover':   '#9acdaa33',
-    'color-disadv-btn-bg':   '#ff2f0037',
+    'color-disadv-btn-bg':   '#ff2f00a3',
     'color-disadv-btn-border':'#ff2f00bf',
     'color-disadv-btn-hover':'#c47a6a33',
     'color-separator':       '#f4ead22e',
