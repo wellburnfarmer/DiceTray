@@ -10,7 +10,7 @@ Outputs (into ./textures/ by default, configurable via OUTPUT_DIR):
     textures/bg_<theme>.jpg        — 1920×1080 background images (RGB, JPEG)
 
 Themes: green-felt, midnight-velvet, parchment,
-        weathered-slate, distant-galaxy, ivory-marble
+        weathered-slate, ivory-marble
 """
 
 import math
@@ -298,43 +298,6 @@ def gen_parchment_texture(dark_hex: str, w=768, h=768) -> np.ndarray:
     return clamp_u8(np.stack([r_arr, g_arr, b_arr, alpha], axis=-1))
 
 
-def gen_galaxy_texture(caustic_hex: str, w=768, h=768) -> np.ndarray:
-    """distant-galaxy — double-warped caustic light patterns (RGBA)."""
-    cr, cg, cb = hex_to_rgb(caustic_hex)
-    xs, ys = make_coords(w, h)
-
-    def h2(x2d, y2d):
-        n = np.sin(x2d*127.1 + y2d*311.7) * 43758.5453
-        return n - np.floor(n)
-
-    wx1 = fbm_arr(xs*0.008,       ys*0.008,       4) * 45
-    wy1 = fbm_arr(xs*0.008 + 3.7, ys*0.008 + 5.2, 4) * 45
-    wx2 = fbm_arr((xs+wx1)*0.006,       (ys+wy1)*0.006,       3) * 35
-    wy2 = fbm_arr((xs+wx1)*0.006 + 8.1, (ys+wy1)*0.006 + 2.4, 3) * 35
-    wx = xs + wx1 + wx2
-    wy = ys + wy1 + wy2
-
-    c1 = np.sin(wx*0.032 + wy*0.024)*0.5 + 0.5
-    c2 = np.sin(wx*0.051 - wy*0.038 + 2.1)*0.5 + 0.5
-    c3 = np.sin(-wx*0.027 + wy*0.059 + 4.6)*0.5 + 0.5
-    c4 = np.sin(wx*0.019 + wy*0.071 + 1.3)*0.5 + 0.5
-    caustic = np.power(c1*c2*c3*c4, 0.55)
-
-    depth   = fbm_arr(xs*0.004, ys*0.006, 3) * 0.35 + 0.65
-    scatter = np.power(np.maximum(0, caustic - 0.6), 2) * 4.0
-
-    rng = np.random.default_rng(42)
-    spark_seed = rng.random((h, w))
-    spark = np.where(spark_seed > 0.994, (spark_seed - 0.994)/0.006*2.0, 0.0)
-
-    total = caustic*depth + scatter*0.5 + spark*0.6
-    rr = np.minimum(255, (cr*caustic*0.8 + 200*scatter*0.15 + 255*spark*0.4)*depth)
-    rg = np.minimum(255, (cg*caustic*0.8 + 230*scatter*0.35 + 255*spark*0.6)*depth)
-    rb = np.minimum(255, (cb*caustic*0.8 + 255*scatter*0.55 + 255*spark)*depth)
-    alpha = np.minimum(255, total * 220)
-    return clamp_u8(np.stack([rr, rg, rb, alpha], axis=-1))
-
-
 # ---------------------------------------------------------------------------
 # BACKGROUND TEXTURES  (1920×1080, RGB)
 # Background images are fully opaque: we composite the texture onto the
@@ -530,33 +493,6 @@ def gen_bg_parchment(dark_hex: str, w: int, h: int) -> np.ndarray:
     return clamp_u8(np.stack([r_arr, g_arr, b_arr, alpha], axis=-1))
 
 
-def gen_bg_galaxy(caustic_hex: str, w: int, h: int) -> np.ndarray:
-    """Coarse galaxy — larger caustic blobs (background scale)."""
-    cr, cg, cb = hex_to_rgb(caustic_hex)
-    xs, ys = make_coords(w, h)
-    wx1 = fbm_arr(xs*0.004, ys*0.004, 4)*55
-    wy1 = fbm_arr(xs*0.004+3.7, ys*0.004+5.2, 4)*55
-    wx2 = fbm_arr((xs+wx1)*0.003, (ys+wy1)*0.003, 3)*40
-    wy2 = fbm_arr((xs+wx1)*0.003+8.1, (ys+wy1)*0.003+2.4, 3)*40
-    wx = xs+wx1+wx2; wy = ys+wy1+wy2
-    c1 = np.sin(wx*0.016+wy*0.012)*0.5+0.5
-    c2 = np.sin(wx*0.025-wy*0.019+2.1)*0.5+0.5
-    c3 = np.sin(-wx*0.013+wy*0.030+4.6)*0.5+0.5
-    c4 = np.sin(wx*0.009+wy*0.036+1.3)*0.5+0.5
-    caustic = np.power(c1*c2*c3*c4, 0.55)
-    depth   = fbm_arr(xs*0.002, ys*0.003, 3)*0.35+0.65
-    scatter = np.power(np.maximum(0, caustic-0.6), 2)*4.0
-    rng2 = np.random.default_rng(55)
-    spark_seed = rng2.random((h, w))
-    spark = np.where(spark_seed > 0.994, (spark_seed-0.994)/0.006*2.0, 0.0)
-    total = caustic*depth + scatter*0.5 + spark*0.6
-    rr = np.minimum(255, (cr*caustic*0.8+220*scatter*0.15+255*spark*0.4)*depth)
-    rg = np.minimum(255, (cg*caustic*0.8+240*scatter*0.35+255*spark*0.6)*depth)
-    rb = np.minimum(255, (cb*caustic*0.8+255*scatter*0.55+255*spark)*depth)
-    alpha = np.minimum(255, total*200)
-    return clamp_u8(np.stack([rr, rg, rb, alpha], axis=-1))
-
-
 # ---------------------------------------------------------------------------
 # Theme definitions (matching TRAY_THEMES in JS)
 # ---------------------------------------------------------------------------
@@ -581,11 +517,6 @@ THEMES = {
         'felt-1': '#3a4550', 'felt-2': '#2a3540',
         'tray_fn':  lambda: gen_slate_texture('#4a5a68', '#8aa0b0'),
         'bg_fn':    lambda: gen_bg_slate('#4a5a68', '#8aa0b0', BG_W, BG_H),
-    },
-    'distant-galaxy': {
-        'felt-1': '#0a1828', 'felt-2': '#060f1a',
-        'tray_fn':  lambda: gen_galaxy_texture('#40b8e0'),
-        'bg_fn':    lambda: gen_bg_galaxy('#30a8c8', BG_W, BG_H),
     },
     'ivory-marble': {
         'felt-1': '#e8e0d4', 'felt-2': '#d4c8b8',
