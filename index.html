@@ -67,13 +67,13 @@ SOFTWARE.
     --color-roll-btn-text: #0f2a20;  /* label on the roll button */
 
     /* Advantage button */
-    --color-adv-btn-bg:     #9acdaa1a;
+    --color-adv-btn-bg:     #20e45eb6;
     --color-adv-btn-border: #00ff51bf;
     --color-adv-btn-hover:  #9acdaa33;
 
     /* Disadvantage button */
-    --color-disadv-btn-bg:     #c47a6a1a;
-    --color-disadv-btn-border: #ff1900bf;
+    --color-disadv-btn-bg:     #ff2f0037;
+    --color-disadv-btn-border: #ff2f00bf;
     --color-disadv-btn-hover:  #c47a6a33;
 
     /* Clear button */
@@ -515,17 +515,18 @@ SOFTWARE.
       <div class="colour-scheme-wrapper">
         <span class="colour-scheme-label" aria-hidden="true">Customise Dice</span>
         <select class="colour-scheme-select" id="colour-scheme-select" aria-label="Customise dice colours">
-          <option value="classic">White &amp; Black</option>
-          <option value="crimson">Red &amp; Gold</option>
-          <option value="midnight">Midnight &amp; Silver</option>
-          <option value="forest">Forest &amp; Copper</option>
-          <option value="amethyst">Purple &amp; Blue</option>
-          <option value="obsidian">Obsidian &amp; Amber</option>
-          <option value="slate">Slate &amp; Jade</option>
-          <option value="burgundy">Burgundy &amp; Cream</option>
-          <option value="prussian">Prussian &amp; Rose</option>
-          <option value="teal">Teal &amp; Coral</option>
-          <option value="charcoal">Charcoal &amp; Lime</option>
+          <option value="ivory">Ivory &amp; Jet</option>
+          <option value="scarlet">Scarlet &amp; Gold</option>
+          <option value="cobalt">Cobalt &amp; Amber</option>
+          <option value="amethyst">Amethyst &amp; Silver</option>
+          <option value="ember">Ember &amp; Frost</option>
+          <option value="aurora">Aurora &amp; Void</option>
+          <option value="obsidian">Obsidian &amp; Jade</option>
+          <option value="copper">Copper &amp; Verdigris</option>
+          <option value="wine">Wine &amp; Bone</option>
+          <option value="midnight">Midnight &amp; Dawn</option>
+          <option value="celestial">Celestial &amp; Nebula</option>
+          <option value="parchment">Parchment &amp; Ink</option>
         </select>
       </div>
       <div class="colour-scheme-wrapper">
@@ -588,131 +589,131 @@ SOFTWARE.
      strokeDark:  edge line colour on the dark/inverted die
    ========================================================================= */
 const COLOUR_SCHEMES = {
-  classic: {
-    body:        '#f4ead2',
-    bodyDark:    '#161616',
-    numeral:     '#000000',
-    numeralDark: '#f4ead2',
-    stroke:      '#000000',
-    strokeDark:  '#f4ead28c',
+  ivory: {
+    // Ivory & Jet — pairs with green felt (#0e451c dark green)
+    body:        '#f0e6cc',   // warm ivory — bright on dark green
+    bodyDark:    '#1a1a1a',   // jet black — distinct from green, cream numeral reads
+    numeral:     '#1a1a1a',   // jet on ivory
+    numeralDark: '#f0e6cc',   // ivory on jet
+    stroke:      '#1a1a1a73',
+    strokeDark:  '#f0e6cc73',
+  },
+  scarlet: {
+    // Scarlet & Gold — pairs with ivory marble (#ddd6c8 pale stone)
+    body:        '#63001a',   // deep scarlet — dark on pale stone
+    bodyDark:    '#d4a017',   // dark gold — different warm dark on pale stone
+    numeral:     '#d4a017',   // bright gold on scarlet
+    numeralDark: '#63001a',   // pale cream on gold
+    stroke:      '#d4a01773',
+    strokeDark:  '#f8ead073',
+  },
+  cobalt: {
+    // Cobalt & Amber — pairs with parchment (#e0bf77 warm amber)
+    body:        '#1a2e60',   // deep cobalt — dark on amber, cool contrast
+    bodyDark:    '#5c1a00',   // burnt sienna — dark on amber, warm contrast
+    numeral:     '#e8d898',   // pale gold on cobalt
+    numeralDark: '#e8d898',   // same pale gold on sienna — unified parchment palette
+    stroke:      '#e8d89873',
+    strokeDark:  '#e8d89873',
   },
   amethyst: {
-    // Primary: deep indigo body, sky-blue numerals
-    // Alternate: bright sky-blue body, deep indigo numerals — a true flip
-    body:        '#2d1b69',
-    bodyDark:    '#7dd3fc',
-    numeral:     '#7dd3fc',
-    numeralDark: '#1e1254',
-    stroke:      '#7dd3fc73',
-    strokeDark:  '#1e125499',
+    // Amethyst & Silver — pairs with midnight velvet (#2a1733 dark purple)
+    body:        '#d0b0f8',   // pale amethyst — luminous on dark purple
+    bodyDark:    '#e8e8f0',   // cool silver-white — bright on dark purple
+    numeral:     '#1a0a30',   // near-black violet on pale amethyst
+    numeralDark: '#2a1050',   // deep purple on silver
+    stroke:      '#1a0a3073',
+    strokeDark:  '#2a105073',
   },
-  crimson: {
-    // Primary: deep crimson body (#63001a), bright gold numerals
-    // Alternate: rich gold body, deep crimson numerals
-    body:        '#63001a',
-    bodyDark:    '#d4a017',
-    numeral:     '#f5c842',
-    numeralDark: '#63001a',
-    stroke:      '#f5c84273',
-    strokeDark:  '#63001a99',
+  ember: {
+    // Ember & Frost — pairs with weathered slate (#141820 near-black blue-grey)
+    body:        '#e8641e',   // vivid ember-orange — warm and bright on near-black
+    bodyDark:    '#c8d8e8',   // cool silver-blue frost — bright and cold on near-black
+    numeral:     '#0e0c0a',   // near-black on orange
+    numeralDark: '#1c2430',   // dark slate on frost
+    stroke:      '#0e0c0a73',
+    strokeDark:  '#1c243073',
   },
-  midnight: {
-    // Primary: deep navy body, pale silver numerals
-    // Alternate: pale silver-white body, deep navy numerals
-    body:        '#0d1b3e',
-    bodyDark:    '#c8d8f0',
-    numeral:     '#c8d8f0',
-    numeralDark: '#0d1b3e',
-    stroke:      '#c8d8f073',
-    strokeDark:  '#0d1b3e99',
-  },
-  forest: {
-    // Primary: dark forest green body, warm copper numerals
-    // Alternate: warm copper body, dark forest green numerals
-    body:        '#0f2d1a',
-    bodyDark:    '#FE9A37',
-    numeral:     '#FE9A37',
-    numeralDark: '#0f2d1a',
-    stroke:      '#c8794173',
-    strokeDark:  '#0f2d1a99',
+  aurora: {
+    // Aurora & Void — pairs with distant galaxy (#020c1a void black)
+    body:        '#00e870',   // vivid aurora-green — blazes on void
+    bodyDark:    '#e030a0',   // vivid aurora-magenta — also blazes on void
+    numeral:     '#020c1a',   // void on green — maximum contrast
+    numeralDark: '#020c1a',   // void on magenta — maximum contrast
+    stroke:      '#020c1a73',
+    strokeDark:  '#020c1a73',
   },
   obsidian: {
-    // Primary: near-black body, rich amber numerals
-    // Alternate: rich amber body, near-black numerals — genuine flip
-    body:        '#181218',
-    bodyDark:    '#e8a020',
-    numeral:     '#e8a020',
-    numeralDark: '#181218',
-    stroke:      '#e8a02073',
-    strokeDark:  '#181218b2',
+    // Obsidian & Jade — pairs with ivory marble (#ddd6c8 pale stone)
+    body:        '#0a0c0a',   // obsidian black — stark on pale stone
+    bodyDark:    '#0d3020',   // deep malachite — also reads on pale stone
+    numeral:     '#48c890',   // vivid jade on black
+    numeralDark: '#a8e8c0',   // pale jade on deep malachite
+    stroke:      '#48c89073',
+    strokeDark:  '#a8e8c073',
   },
-  slate: {
-    // Primary: dark slate body, bright jade numerals
-    // Alternate: bright jade body, dark slate numerals
-    body:        '#1e2a2e',
-    bodyDark:    '#00a86b',
-    numeral:     '#00a86b',
-    numeralDark: '#1e2a2e',
-    stroke:      '#34d39973',
-    strokeDark:  '#1e2a2eb2',
+  copper: {
+    // Copper & Verdigris — pairs with weathered slate (#141820 near-black)
+    body:        '#d4803a',   // burnished copper — warm bright on near-black
+    bodyDark:    '#4ab8a0',   // verdigris — cool bright on near-black
+    numeral:     '#100800',   // near-black on copper
+    numeralDark: '#0a1a14',   // near-black on verdigris
+    stroke:      '#10080073',
+    strokeDark:  '#0a1a1473',
   },
-  burgundy: {
-    // Primary: deep wine body, warm parchment numerals
-    // Alternate: warm parchment body, deep wine numerals
-    body:        '#3b0a1e',
-    bodyDark:    '#f0dfc0',
-    numeral:     '#f0dfc0',
-    numeralDark: '#3b0a1e',
-    stroke:      '#f0dfc073',
-    strokeDark:  '#3b0a1e99',
+  wine: {
+    // Wine & Bone — pairs with green felt (#0e451c dark green)
+    body:        '#500a20',   // deep wine — warm dark on dark green
+    bodyDark:    '#e0d4b8',   // aged bone — bright on dark green
+    numeral:     '#e0d4b8',   // bone on wine
+    numeralDark: '#500a20',   // wine on bone
+    stroke:      '#e0d4b873',
+    strokeDark:  '#500a2073',
   },
-  prussian: {
-    // Primary: dusty rose body, prussian blue numerals
-    // Alternate: prussian blue body, dusty rose numerals
-    body:        '#e8a0a8',
-    bodyDark:    '#003153',
-    numeral:     '#003153',
-    numeralDark: '#e8a0a8',
-    stroke:      '#0d2b4099',
-    strokeDark:  '#e8a0a873',
+  midnight: {
+    // Midnight & Dawn — pairs with midnight velvet (#2a1733 dark purple)
+    body:        '#e8c8a0',   // warm dawn-peach — light and warm on dark purple
+    bodyDark:    '#102050',   // deep midnight navy — distinct dark from purple
+    numeral:     '#102050',   // navy on dawn
+    numeralDark: '#e8c8a0',   // dawn on navy
+    stroke:      '#10205073',
+    strokeDark:  '#e8c8a073',
   },
-  teal: {
-    // Primary: deep teal body, warm coral numerals
-    // Alternate: warm coral body, deep teal numerals
-    body:        '#0a2e2e',
-    bodyDark:    '#f07850',
-    numeral:     '#f07850',
-    numeralDark: '#0a2e2e',
-    stroke:      '#f0785073',
-    strokeDark:  '#0a2e2eb2',
+  celestial: {
+    // Celestial & Nebula — pairs with distant galaxy (#020c1a void black)
+    body:        '#40a0f8',   // electric sky-blue — glows on void
+    bodyDark:    '#c858f0',   // vivid violet — glows on void
+    numeral:     '#020c1a',   // void on blue
+    numeralDark: '#020c1a',   // void on violet
+    stroke:      '#020c1a73',
+    strokeDark:  '#020c1a73',
   },
-  charcoal: {
-    // Primary: dark charcoal body, acid lime numerals
-    // Alternate: acid lime body, dark charcoal numerals
-    body:        '#1c1c1c',
-    bodyDark:    '#a3e635',
-    numeral:     '#a3e635',
-    numeralDark: '#1c1c1c',
-    stroke:      '#a3e63573',
-    strokeDark:  '#1c1c1cb2',
+  parchment: {
+    // Parchment & Ink — pairs with parchment (#e0bf77 warm amber)
+    body:        '#2a1400',   // dark ink-brown — deep warm dark on amber
+    bodyDark:    '#1a2840',   // dark ink-blue — cool dark on amber
+    numeral:     '#e8d898',   // pale script-gold on brown
+    numeralDark: '#e8d898',   // same pale script-gold on blue
+    stroke:      '#e8d89873',
+    strokeDark:  '#e8d89873',
   },
 };
 
-let currentScheme = 'classic';
+let currentScheme = 'ivory';
 let schemeCustomised = false;
 
 // Paired dice colour scheme for each tray (used when dice haven't been customised)
 const TRAY_DEFAULT_SCHEME = {
-  'green-felt':      'classic',   // white & black — the base default
-  'ivory-marble':    'crimson',
-  'parchment':       'amethyst',
-  'midnight-velvet': 'charcoal',
-  'weathered-slate': 'burgundy',
-  'distant-galaxy':  'obsidian',
+  'green-felt':      'ivory',       // ivory & jet
+  'ivory-marble':    'scarlet',     // scarlet & gold
+  'parchment':       'cobalt',      // cobalt & amber
+  'midnight-velvet': 'amethyst',    // amethyst & silver
+  'weathered-slate': 'ember',       // ember & frost
+  'distant-galaxy':  'aurora',      // aurora & void
 };
 
 function getDieColors(die) {
-  const scheme = COLOUR_SCHEMES[currentScheme] || COLOUR_SCHEMES.classic;
+  const scheme = COLOUR_SCHEMES[currentScheme] || COLOUR_SCHEMES.ivory;
   const isDark = die.colorScheme === 'dark';
   return {
     body:    isDark ? scheme.bodyDark    : scheme.body,
@@ -1629,12 +1630,22 @@ function refreshAdvantageButtons() {
    ========================================================================= */
 const colourSchemeSelect = document.getElementById('colour-scheme-select');
 
+// Sync the picker button SVG icon colours to the current dice colour scheme.
+// Uses the primary (light) die's body and stroke so the icons match what's in the tray.
+function updatePickerIconColors() {
+  const scheme = COLOUR_SCHEMES[currentScheme] || COLOUR_SCHEMES.ivory;
+  const root = document.documentElement;
+  root.style.setProperty('--color-picker-icon', scheme.body);
+  root.style.setProperty('--color-die-stroke',  scheme.stroke);
+}
+
 // Track the selected scheme separately from the native select value.
 colourSchemeSelect.addEventListener('change', () => {
   const val = colourSchemeSelect.value;
   if (COLOUR_SCHEMES[val]) {
     currentScheme = val;
     schemeCustomised = true;
+    updatePickerIconColors();
     renderDiceCanvas();
   }
 });
@@ -2283,11 +2294,11 @@ const TRAY_THEMES = {
     'color-roll-btn-top':    '#c9a24b',
     'color-roll-btn-bottom': '#8d7438',
     'color-roll-btn-text':   '#0f2a20',
-    'color-adv-btn-bg':      '#9acdaa1a',
-    'color-adv-btn-border':  '#9acdaabf',
+    'color-adv-btn-bg':      '#20e45eb6',
+    'color-adv-btn-border':  '#00ff51bf',
     'color-adv-btn-hover':   '#9acdaa33',
-    'color-disadv-btn-bg':   '#c47a6a1a',
-    'color-disadv-btn-border':'#c47a6abf',
+    'color-disadv-btn-bg':   '#ff2f0037',
+    'color-disadv-btn-border':'#ff2f00bf',
     'color-disadv-btn-hover':'#c47a6a33',
     'color-separator':       '#f4ead22e',
     'color-separator-subtle':'#f4ead21a',
@@ -2497,6 +2508,8 @@ document.getElementById('tray-theme-select').addEventListener('change', (e) => {
     }
   }
 
+  updatePickerIconColors();
+
   renderDiceCanvas();
 });
 
@@ -2555,6 +2568,7 @@ document.getElementById('tray-theme-select').addEventListener('change', (e) => {
    ========================================================================= */
 rebuildField();
 applyTrayTheme('green-felt');
+updatePickerIconColors();
 </script>
 </body>
 </html>
