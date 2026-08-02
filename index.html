@@ -93,11 +93,16 @@ SOFTWARE.
   html, body {
     margin: 0;
     min-height: 100vh;
-    background: transparent;
+    /* Use the current tray background colour as a fallback so that any
+       area not yet covered by the fixed #bg-layer image (e.g. during
+       scroll overscroll, or before the image has decoded) never shows
+       a plain white or transparent gap. JS keeps this in sync via the
+       --color-tray-bg variable, which is always set before the image loads. */
+    background-color: var(--color-tray-bg);
     color: var(--color-text);
     font-family: var(--font-title);
     overflow-x: hidden;
-    transition: color 0.3s ease;
+    transition: color 0.3s ease, background-color 0.3s ease;
   }
 
   .tray-root {
@@ -507,7 +512,7 @@ SOFTWARE.
 </style>
 </head>
 <body>
-<div id="bg-layer" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;background-size:cover;background-position:center;background-repeat:no-repeat;transition:background-image 0.3s ease;"></div>
+<div id="bg-layer" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;background-size:cover;background-position:center;background-repeat:no-repeat;background-attachment:fixed;transition:background-image 0.3s ease;"></div>
 <div class="tray-root" style="position:relative;z-index:1;">
   <div class="tray-header">
     <h1 class="tray-title">Dice<span class="accent">Tray</span></h1>
@@ -520,12 +525,10 @@ SOFTWARE.
           <option value="cobalt">Cobalt &amp; Amber</option>
           <option value="amethyst">Amethyst &amp; Silver</option>
           <option value="ember">Ember &amp; Frost</option>
-          <option value="aurora">Aurora &amp; Void</option>
           <option value="obsidian">Obsidian &amp; Jade</option>
           <option value="copper">Copper &amp; Verdigris</option>
           <option value="wine">Wine &amp; Bone</option>
           <option value="midnight">Midnight &amp; Dawn</option>
-          <option value="celestial">Celestial &amp; Nebula</option>
           <option value="parchment">Parchment &amp; Ink</option>
         </select>
       </div>
@@ -618,11 +621,11 @@ const COLOUR_SCHEMES = {
   amethyst: {
     // Amethyst & Silver — pairs with midnight velvet (#2a1733 dark purple)
     body:        '#e8e8f0',   // pale amethyst — luminous on dark purple
-    bodyDark:    '#ae30db',   // cool silver-white — bright on dark purple
+    bodyDark:    '#ba3cd6',   // cool silver-white — bright on dark purple
     numeral:     '#ae30db',   // near-black violet on pale amethyst
-    numeralDark: '#1a0a30',   // deep purple on silver
+    numeralDark: '#ddd7de',   // deep purple on silver
     stroke:      '#2a105073',
-    strokeDark:  '#1a0a3073',
+    strokeDark:  '#ddd7de',
   },
   ember: {
     // Ember & Frost — pairs with weathered slate (#141820 near-black blue-grey)
@@ -633,30 +636,21 @@ const COLOUR_SCHEMES = {
     stroke:      '#0e0c0a73',
     strokeDark:  '#1c243073',
   },
-  aurora: {
-    // Aurora & Void
-    body:        '#000000',   // vivid aurora-green — blazes on void
-    bodyDark:    '#e030a0',   // vivid aurora-magenta — also blazes on void
-    numeral:     '#e030a0',   // void on green — maximum contrast
-    numeralDark: '#00ff44',   // void on magenta — maximum contrast
-    stroke:      '#e030a0',
-    strokeDark:  '#03630073',
-  },
   obsidian: {
     // Obsidian & Jade — pairs with ivory marble (#ddd6c8 pale stone)
     body:        '#0a0c0a',   // obsidian black — stark on pale stone
-    bodyDark:    '#0d3020',   // deep malachite — also reads on pale stone
-    numeral:     '#08fc34',   // vivid jade on black
-    numeralDark: '#a8e8c0',   // pale jade on deep malachite
+    bodyDark:    '#02e39c',   // deep malachite — also reads on pale stone
+    numeral:     '#02e39c',   // vivid jade on black
+    numeralDark: '#000000',   // pale jade on deep malachite
     stroke:      '#48c89073',
-    strokeDark:  '#a8e8c073',
+    strokeDark:  '#000000',
   },
   copper: {
     // Copper & Verdigris — pairs with weathered slate (#141820 near-black)
-    body:        '#d4803a',   // burnished copper — warm bright on near-black
+    body:        '#ff9f29',   // burnished copper — warm bright on near-black
     bodyDark:    '#4ab8a0',   // verdigris — cool bright on near-black
     numeral:     '#100800',   // near-black on copper
-    numeralDark: '#995014',   // near-black on verdigris
+    numeralDark: '#a15a03',   // near-black on verdigris
     stroke:      '#10080073',
     strokeDark:  '#0a1a1473',
   },
@@ -677,15 +671,6 @@ const COLOUR_SCHEMES = {
     numeralDark: '#e8c8a0',   // dawn on navy
     stroke:      '#e8c8a073',
     strokeDark:  '#d4760473',
-  },
-  celestial: {
-    // Celestial & Nebula
-    body:        '#40a0f8',   // electric sky-blue — glows on void
-    bodyDark:    '#c858f0',   // vivid violet — glows on void
-    numeral:     '#020c1a',   // void on blue
-    numeralDark: '#020c1a',   // void on violet
-    stroke:      '#020c1a73',
-    strokeDark:  '#020c1a73',
   },
   parchment: {
     // Parchment & Ink — pairs with parchment (#e0bf77 warm amber)
