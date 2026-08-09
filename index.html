@@ -67,13 +67,13 @@ SOFTWARE.
     --color-roll-btn-text: #0f2a20;  /* label on the roll button */
 
     /* Advantage button */
-    --color-adv-btn-bg:     #20e45eb6;
-    --color-adv-btn-border: #00ff51bf;
+    --color-adv-btn-bg:     #229e49d0;
+    --color-adv-btn-border:#11672cfb;
     --color-adv-btn-hover:  #9acdaa33;
 
     /* Disadvantage button */
-    --color-disadv-btn-bg:     #ff2f00a3;
-    --color-disadv-btn-border: #ff2f00bf;
+    --color-disadv-btn-bg:     #af3e25be;
+    --color-disadv-btn-border: #af3e25;
     --color-disadv-btn-hover:  #c47a6a33;
 
     /* Clear button */
@@ -1795,18 +1795,19 @@ function alignDiceToViewer(diceToAlign, durationMs, onDone) {
     })
     .filter(Boolean);
 
-  // Also align percentile unit dice to match their owner's rotation delta.
-  // We do this by computing the rotation that was applied to the owner and
-  // applying the same to the unit die.
+  // Also align percentile unit dice. Each unit die must settle onto its own
+  // rolled face - it has its own currentQuat and faceNormal/up, independent
+  // of the owner die - so we compute its toQuat the same way as any other
+  // die. We just use azimuth 0 (same as the owner) so it ends up facing the
+  // viewer in step with its owner rather than at some unrelated rotation.
   diceToAlign.forEach((d) => {
     if (!d.isPercentileUnit) return;
-    const owner = diceToAlign.find(
-      (x) => !x.isPercentileUnit && x.pairId === d.pairId
-    );
-    if (!owner) return;
-    const ownerPair = pairs.find((p) => p.die === owner);
-    if (!ownerPair) return;
-    pairs.push({ die: d, fromQuat: d.currentQuat.slice(), toQuat: ownerPair.toQuat });
+    if (d.rolledLabel === null || d.rolledLabel === undefined) return;
+    if (pairs.some((p) => p.die === d)) return; // already handled above
+    const face = d.faceByLabel[d.rolledLabel];
+    if (!face) return;
+    const toQuat = solveSettleFromQuat(d.currentQuat, face.normal, face.up, false, 0);
+    pairs.push({ die: d, fromQuat: d.currentQuat.slice(), toQuat });
   });
 
   if (pairs.length === 0) { if (onDone) onDone(); return; }
@@ -2303,11 +2304,11 @@ const TRAY_THEMES = {
     'color-roll-btn-top':    '#c9a24b',
     'color-roll-btn-bottom': '#8d7438',
     'color-roll-btn-text':   '#0f2a20',
-    'color-adv-btn-bg':      '#20e45eb6',
-    'color-adv-btn-border':  '#00ff51bf',
+    'color-adv-btn-bg':      '#229e49d0',
+    'color-adv-btn-border':  '#11672cfb',
     'color-adv-btn-hover':   '#9acdaa33',
-    'color-disadv-btn-bg':   '#ff2f00a3',
-    'color-disadv-btn-border':'#ff2f00bf',
+    'color-disadv-btn-bg':   '#af3e25be',
+    'color-disadv-btn-border':'#af3e25',
     'color-disadv-btn-hover':'#c47a6a33',
     'color-separator':       '#f4ead22e',
     'color-separator-subtle':'#f4ead21a',
