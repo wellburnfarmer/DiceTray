@@ -1,0 +1,112 @@
+/* controls.css — the "Customise Dice" / "Customise Tray" dropdowns and the
+   die-picker row (add-a-die buttons + "clear tray" button). */
+
+/* Colour scheme dropdown */
+.colour-scheme-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* Fixed label that always shows regardless of selected value */
+.colour-scheme-label {
+  position: absolute;
+  inset: 0 28px 0 10px;  /* leave room for the chevron on the right */
+  display: flex;
+  align-items: center;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--color-dropdown-label);
+  pointer-events: none;  /* clicks pass through to the select beneath */
+  white-space: nowrap;
+  overflow: hidden;
+  transition: color 0.15s;
+  z-index: 1;
+}
+.colour-scheme-wrapper:hover .colour-scheme-label { color: var(--color-dropdown-label); }
+
+.colour-scheme-select {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  letter-spacing: 0;
+  background-color: transparent;
+  border: 1px solid var(--color-text-secondary);
+  /* Make the native selected-value text invisible — the overlay label shows instead */
+  color: transparent;
+  padding: 7px 28px 7px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23cfc6ab' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 9px center;
+  transition: border-color 0.15s, background-color 0.15s;
+  min-width: 140px;
+}
+.colour-scheme-select:hover {
+  border-color: var(--color-accent);
+  background-color: var(--color-btn-hover);
+}
+.colour-scheme-select:focus {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+/* Style the select options (limited browser support but helpful where it works) */
+.colour-scheme-select option {
+  background: var(--color-dropdown-bg);
+  color: var(--color-text);
+  font-family: var(--font-ui);
+  font-size: 13px;
+}
+
+.picker { width: 100%; display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
+
+.picker-btn {
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 500;
+  background: transparent;
+  border: 1px solid var(--color-text-secondary);
+  color: var(--color-text);
+  padding: 11px 18px 11px 13px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s, color 0.3s;
+}
+.picker-icon {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  overflow: visible;
+}
+.picker-icon path {
+  fill: var(--color-picker-icon);
+  fill-opacity: 0.85;
+  stroke: var(--color-die-stroke);
+  stroke-width: 1.4;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+.picker-btn:disabled .picker-icon path { fill-opacity: 0.5; }
+.picker-btn:hover:not(:disabled) { background: var(--color-btn-hover); border-color: var(--color-accent); color: var(--color-text); }
+.picker-btn:active:not(:disabled) { transform: scale(0.96); }
+.picker-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.picker-btn:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+.picker-clear {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  background: none;
+  border: 1px solid var(--color-btn-clear);
+  color: var(--color-btn-clear);
+  padding: 9px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.modifier-row .picker-clear { margin-left: auto; }
+.picker-clear:hover:not(:disabled) { background: #d8654a1f; }
+.picker-clear:disabled { opacity: 0.35; cursor: not-allowed; }
+.picker-clear:focus-visible { outline: 2px solid var(--color-btn-clear); outline-offset: 2px; }

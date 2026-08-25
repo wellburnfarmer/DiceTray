@@ -1,0 +1,62 @@
+/* theme.css — CSS custom properties (colours, fonts) that every tray theme
+   overrides at runtime via applyTrayTheme() in js/tray-themes.js. The values
+   below are the defaults shown before any theme JS has run. */
+
+:root {
+  /* ── Tray theme variables — overridden by JS when a tray is selected ──── */
+
+  /* Text */
+  --color-text:            #f4ead2;  /* primary text: body, buttons, inputs */
+  --color-text-secondary:  #cfc6ab;  /* secondary text: labels, captions, muted UI */
+  --color-title:           #f4ead2;  /* "DiceTray" heading */
+  --color-dropdown-label:  #cfc6ab;  /* "Customise Dice" / "Customise Tray" labels */
+  --color-modifier-label:  #cfc6ab;  /* "modifier" label beside the input */
+
+  /* Accent */
+  --color-accent:           #c9a24b;  /* hover borders, focus rings, tag highlights, roll total */
+  --color-accent-secondary: #8d7438;  /* history section title */
+
+  /* Picker die icons */
+  --color-die-stroke:  #16382b;  /* SVG stroke on die-type buttons */
+  --color-picker-icon: #f4ead2;  /* SVG fill on die-type buttons */
+
+  /* Dropdown */
+  --color-dropdown-bg: #1f4d3a;  /* <option> background in selects */
+
+  /* Tray surface */
+  --color-tray-bg:    #142e22;  /* tray surface background colour */
+  --tray-texture:     none;     /* tray surface texture overlay (set by JS) */
+
+  /* Generic buttons (picker die buttons, group chip buttons) */
+  --color-btn-bg:     #f4ead20f;
+  --color-btn-border: #f4ead238;
+  --color-btn-hover:  #f4ead224;
+
+  /* Roll button */
+  --color-roll-btn-top:  #c9a24b;  /* gradient top */
+  --color-roll-btn-bottom: #8d7438;  /* gradient bottom */
+  --color-roll-btn-text: #0f2a20;  /* label on the roll button */
+
+  /* Advantage button */
+  --color-adv-btn-bg:     #229e49d0;
+  --color-adv-btn-border:#11672cfb;
+  --color-adv-btn-hover:  #9acdaa33;
+
+  /* Disadvantage button */
+  --color-disadv-btn-bg:     #af3e25be;
+  --color-disadv-btn-border: #af3e25;
+  --color-disadv-btn-hover:  #c47a6a33;
+
+  /* Clear button */
+  --color-btn-clear: #d8654a;  /* "clear tray" text and border */
+
+  /* Separators / dividers */
+  --color-separator:        #f4ead22e;  /* header underline */
+  --color-separator-subtle: #f4ead21a;  /* tray border, section dividers */
+
+  /* Font families — swapped per tray */
+  --font-title: 'Almendra', serif;
+  --font-ui:    'JetBrains Mono', monospace;
+}
+
+* { box-sizing: border-box; }

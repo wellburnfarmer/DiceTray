@@ -1,0 +1,43 @@
+/* results.css — the roll total display, the recent-rolls history list, and
+   the small-viewport media query for the header. */
+
+.roll-total {
+  width: 100%;
+  text-align: center;
+  padding-top: 16px;
+  margin-top: 8px;
+  border-top: 1px solid var(--color-separator-subtle);
+  min-height: 64px;
+}
+.roll-total .total-number {
+  font-family: 'Almendra', serif;
+  font-weight: 700;
+  font-size: 44px;
+  color: var(--color-accent);
+  line-height: 1;
+  display: block;
+}
+.roll-total .total-number.is-placeholder {
+  color: var(--color-text-secondary);
+  opacity: 0.3;
+}
+.roll-total .total-caption {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+  display: block;
+  margin-top: 4px;
+}
+
+.history { width: 100%; margin-top: 22px; font-family: var(--font-ui); font-size: 11.5px; color: var(--color-text-secondary); }
+.history-title { text-transform: uppercase; letter-spacing: 0.08em; font-size: 10px; color: var(--color-accent-secondary); margin-bottom: 8px; }
+.history-row { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; border-bottom: 1px solid var(--color-separator-subtle); }
+.history-row .h-total { color: var(--color-text); flex-shrink: 0; }
+.history-row .h-summary { opacity: 0.8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+@media (max-width: 480px) {
+  .tray-title { font-size: 23px; }
+  .colour-scheme-select { min-width: 110px; font-size: 12px; }
+  .tray-controls { gap: 6px; }
+}

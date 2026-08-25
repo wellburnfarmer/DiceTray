@@ -14,7 +14,7 @@ Open the link and tap or click a die to roll it. That's it.
 
 ## Hosting
 
-This is a single self-contained HTML file with no external dependencies (except Google Fonts). You can:
+The app is a static site (`index.html` plus `css/`, `js/`, and `textures/`) with no build step and no external dependencies except Google Fonts, which fall back to system fonts when offline. You can:
 
-- Save it locally and open it in any browser
-- Host it anywhere that serves static HTML
+- Download or clone the whole folder and open `index.html` — it works fully offline (Google Fonts excepted)
+- Host the whole folder anywhere that serves static files

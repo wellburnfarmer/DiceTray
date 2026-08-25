@@ -1,0 +1,49 @@
+/* base.css — page-level layout: body background, the centred tray column,
+   and the header row that holds the title and the two theme dropdowns. */
+
+html, body {
+  margin: 0;
+  min-height: 100vh;
+  /* Use the current tray background colour as a fallback so that any
+     area not yet covered by the fixed #bg-layer image (e.g. during
+     scroll overscroll, or before the image has decoded) never shows
+     a plain white or transparent gap. JS keeps this in sync via the
+     --color-tray-bg variable, which is always set before the image loads. */
+  background-color: var(--color-tray-bg);
+  color: var(--color-text);
+  font-family: var(--font-title);
+  overflow-x: hidden;
+  transition: color 0.3s ease, background-color 0.3s ease;
+}
+
+.tray-root {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 28px 16px 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tray-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--color-separator);
+  padding-bottom: 14px;
+  margin-bottom: 20px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.tray-controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.tray-title { font-family: var(--font-title); font-size: 28px; font-weight: 700; margin: 0; color: var(--color-title); flex-shrink: 0; transition: color 0.3s; }
+.tray-title .accent { color: var(--color-accent); font-style: italic; font-weight: 600; }

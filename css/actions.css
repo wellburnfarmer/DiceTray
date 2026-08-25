@@ -1,0 +1,135 @@
+/* actions.css — the row below the tray (dice count + Roll button), the
+   Advantage/Disadvantage buttons, and the modifier input. */
+
+/* Count label right-aligned, Roll button centred, both on same row */
+.count-label-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  margin-top: 6px;
+}
+.count-label-row .tray-sub {
+  grid-column: 3;
+  justify-self: end;
+}
+.count-label-row .roll-btn {
+  grid-column: 2;
+  justify-self: center;
+}
+.tray-sub {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.adv-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.roll-btn {
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 18px;
+  background: linear-gradient(180deg, var(--color-roll-btn-top), var(--color-roll-btn-bottom));
+  color: var(--color-roll-btn-text);
+  border: none;
+  border-radius: 10px;
+  padding: 14px 30px;
+  cursor: pointer;
+  box-shadow: 0 3px 0 #0000004c, 0 6px 14px #00000040;
+  transition: transform 0.1s, box-shadow 0.1s, background 0.3s;
+}
+.roll-btn:hover:not(:disabled) { transform: translateY(-1px); }
+.roll-btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 #0000004c, 0 2px 6px #00000040; }
+.roll-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.roll-btn:focus-visible { outline: 2px solid var(--color-text); outline-offset: 3px; }
+
+.adv-btn {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--color-adv-btn-bg);
+  border: 1.5px solid var(--color-adv-btn-border);
+  color: var(--color-text);
+  padding: 11px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s, color 0.3s;
+}
+.adv-btn:hover:not(:disabled) { background: var(--color-adv-btn-hover); border-color: var(--color-adv-btn-border); filter: brightness(1.2); }
+.adv-btn:active:not(:disabled) { transform: translateY(2px); }
+.adv-btn:disabled { opacity: 0.4; cursor: not-allowed; background: var(--color-btn-bg); border-color: var(--color-btn-border); }
+.adv-btn.disadv { background: var(--color-disadv-btn-bg); border-color: var(--color-disadv-btn-border); }
+.adv-btn.disadv:hover:not(:disabled) { background: var(--color-disadv-btn-hover); border-color: var(--color-disadv-btn-border); filter: brightness(1.2); }
+.adv-btn:focus-visible { outline: 2px solid var(--color-text); outline-offset: 3px; }
+
+.modifier-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.modifier-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f4ead20f;
+  border: 1px solid #f4ead238;
+  border-radius: 10px;
+  padding: 8px 14px;
+  cursor: text;
+}
+.modifier-label {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-modifier-label);
+}
+.modifier-sign-btn {
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1;
+  background: #f4ead214;
+  border: 1px solid #f4ead247;
+  color: var(--color-text-secondary);
+  border-radius: 6px;
+  padding: 8px 11px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.modifier-sign-btn:hover { background: #f4ead229; border-color: var(--color-accent); color: var(--color-text); }
+.modifier-sign-btn:active { transform: translateY(1px); }
+.modifier-sign-btn.is-negative { border-color: #c47a6ab2; color: var(--color-text); }
+.modifier-sign-btn.is-positive { border-color: #9acdaab2; color: var(--color-text); }
+.modifier-sign-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.modifier-input {
+  width: 4ch;
+  font-family: var(--font-ui);
+  font-size: 16px;
+  font-weight: 500;
+  background: #f4ead214;
+  border: none;
+  border-bottom: 1.5px solid #f4ead259;
+  border-radius: 4px 4px 0 0;
+  color: var(--color-text);
+  text-align: left;
+  padding: 3px 2px 3px 6px;
+}
+.modifier-input:focus { outline: none; border-bottom-color: var(--color-accent); background: #f4ead221; }
+.modifier-input::placeholder { color: var(--color-text-secondary); opacity: 0.6; }
+.modifier-box:has(.modifier-input:focus) { border-color: var(--color-accent); }
+.modifier-box:has(.modifier-input:disabled) { opacity: 0.5; cursor: not-allowed; }
