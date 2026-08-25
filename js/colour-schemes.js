@@ -66,7 +66,7 @@ const COLOUR_SCHEMES = {
     tray: 'midnight-velvet',
     label: 'Bone & Spectral Green',
     primary:   { body: '#e8e0d0', numeral: '#22201a', stroke: '#22201a73' },
-    secondary: { body: '#3aa066', numeral: '#082a15', stroke: '#082a1573' },
+    secondary: { body: '#2fbc42', numeral: '#062008', stroke: '#06200873' },
   },
 
   ember: {
@@ -78,14 +78,14 @@ const COLOUR_SCHEMES = {
   copper: {
     tray: 'weathered-slate',
     label: 'Copper & Verdigris',
-    primary:   { body: '#ff9f29', numeral: '#241000', stroke: '#24100073' },
-    secondary: { body: '#1e7562', numeral: '#ffffff', stroke: '#ffffff73' },
+    primary:   { body: '#d08039', numeral: '#241000', stroke: '#24100073' },
+    secondary: { body: '#267363', numeral: '#ffffff', stroke: '#ffffff73' },
   },
   signal: {
     tray: 'weathered-slate',
     label: 'Steel & Signal Red',
     primary:   { body: '#b9c6d4', numeral: '#141c24', stroke: '#141c2473' },
-    secondary: { body: '#f0503c', numeral: '#2a0400', stroke: '#2a040073' },
+    secondary: { body: '#f0170f', numeral: '#1a0000', stroke: '#1a000073' },
   },
 
   manuscript: {
