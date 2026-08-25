@@ -70,7 +70,7 @@ function removeOne(sides) {
 function clearAll() {
   if (rolling) return;
   order = [];
-  advCreamRole = 'original';
+  advPrimaryRole = 'original';
   rebuildField();
   resetTotal();
   updatePickerIconColors();
@@ -95,15 +95,20 @@ function refreshAdvantageButtons() {
 }
 
 // Sync the picker button SVG icon colours to the current dice colour scheme.
-// Uses the primary (light) die's body and stroke normally, but switches to the
-// alternate (dark) die's colours when a dark die is currently in the tray.
-// Reads colorScheme directly from the dice array so it stays in sync across
-// multiple advantage/disadvantage rolls.
-function updatePickerIconColors() {
+// Uses the primary die's body and stroke normally, but switches to the
+// secondary die's colours when a secondary-role die is currently in the tray.
+// Reads colorRole directly from the dice array so it stays in sync across
+// multiple advantage/disadvantage rolls. Pass an explicit role to override
+// that lookup (roll.js does this with the winning die's role).
+function updatePickerIconColors(explicitRole) {
   const scheme = COLOUR_SCHEMES[currentScheme] || COLOUR_SCHEMES.ivory;
   const root = document.documentElement;
-  const firstNonUnit = dice.find((d) => !d.isPercentileUnit);
-  const altIsWinning = firstNonUnit ? firstNonUnit.colorScheme === 'dark' : false;
-  root.style.setProperty('--color-picker-icon', altIsWinning ? scheme.bodyDark  : scheme.body);
-  root.style.setProperty('--color-die-stroke',  altIsWinning ? scheme.strokeDark : scheme.stroke);
+  let role = explicitRole;
+  if (!role) {
+    const firstNonUnit = dice.find((d) => !d.isPercentileUnit);
+    role = firstNonUnit ? firstNonUnit.colorRole : 'primary';
+  }
+  const roleColors = role === 'secondary' ? scheme.secondary : scheme.primary;
+  root.style.setProperty('--color-picker-icon', roleColors.body);
+  root.style.setProperty('--color-die-stroke',  roleColors.stroke);
 }

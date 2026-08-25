@@ -98,5 +98,5 @@ function buildDieModel(sides, isPercentileUnit) {
   const faceByLabel = {};
   faces.forEach((f) => { faceByLabel[f.label] = f; });
 
-  return { sides, faces, faceByLabel, value: null, settled: false, rolledLabel: null, currentQuat: [0, 0, 0, 1], drawOpacity: 1, colorScheme: 'cream' };
+  return { sides, faces, faceByLabel, value: null, settled: false, rolledLabel: null, currentQuat: [0, 0, 0, 1], drawOpacity: 1, colorRole: 'primary' };
 }

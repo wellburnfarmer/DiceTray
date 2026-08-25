@@ -1,5 +1,5 @@
 /* state.js — the picker's die-type icons, and the mutable pool of dice
-   currently in the tray (order/dice/rolling/history/advCreamRole) plus the
+   currently in the tray (order/dice/rolling/history/advPrimaryRole) plus the
    functions that build and rebuild that pool. Depends on die-model.js
    (buildDieModel) and math.js (rollFloat, quatFromAxisAngle); rebuildField()
    also calls layoutDiceGrid(), renderDiceCanvas(), and the UI refresh
@@ -27,7 +27,7 @@ let order = [20];
 let dice = [];
 let rolling = false;
 let history = [];
-let advCreamRole = 'original';
+let advPrimaryRole = 'original';
 
 function poolCounts() {
   const counts = {};
@@ -59,13 +59,13 @@ function buildFreshDie(sides, isPercentileUnit) {
 
 function rebuildField() {
   // Capture existing non-percentile dice in slot order so we can carry their
-  // state (orientation, value, colour scheme) forward.  Only genuinely new
+  // state (orientation, value, colour role) forward.  Only genuinely new
   // slots get a fresh die; everything else keeps its current quaternion, value,
   // rolledLabel, and settled flag so adding/removing one die doesn't disturb
   // the others.
   const prevDice = dice.filter((d) => !d.isPercentileUnit);
-  const darkCount = prevDice.filter((d) => d.colorScheme === 'dark').length;
-  const newDieScheme = darkCount > prevDice.length - darkCount ? 'dark' : 'cream';
+  const secondaryCount = prevDice.filter((d) => d.colorRole === 'secondary').length;
+  const newDieRole = secondaryCount > prevDice.length - secondaryCount ? 'secondary' : 'primary';
 
   dice = [];
   let pairCounter = 0;
@@ -82,7 +82,7 @@ function rebuildField() {
     } else {
       // New die or type changed — build fresh.
       die = buildFreshDie(sides);
-      die.colorScheme = prev ? prev.colorScheme : newDieScheme;
+      die.colorRole = prev ? prev.colorRole : newDieRole;
     }
     prevSlot++;
 
@@ -98,7 +98,7 @@ function rebuildField() {
       } else {
         unitDie = buildDieModel(10, true);
         unitDie.currentQuat = die.currentQuat;
-        unitDie.colorScheme = die.colorScheme;
+        unitDie.colorRole = die.colorRole;
       }
       unitDie.pairId = pairId;
       unitDie.isPercentileUnit = true;

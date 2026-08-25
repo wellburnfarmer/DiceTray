@@ -1,108 +1,129 @@
 /* colour-schemes.js — the dice colour palettes offered under "Customise Dice",
    plus which palette pairs with each tray theme by default. Depends on
    nothing; TRAY_THEMES (tray-themes.js) and applyTrayTheme() read
-   TRAY_DEFAULT_SCHEME and currentScheme from here. */
+   TRAY_DEFAULT_SCHEME and currentScheme from here.
+
+   Design rules for every scheme (see getDieColors() for how they're read):
+     - Every scheme targets one specific tray (its `tray` key) and both
+       dice must read clearly against that tray's background.
+     - primary and secondary sit on the SAME side of the tray's lightness —
+       both bright bodies on a dark tray, both deep bodies on a light tray —
+       and are told apart by hue/character, never by inverting light/dark.
+       secondary is its own theme, not primary's mirror image.
+     - The one exception is `ivory` ("Ivory & Jet"), the default pairing for
+       green felt: a deliberate cream/jet inversion, and protected — never
+       remove or restyle it. Every other scheme is fair game to add, rename,
+       or retune.
+   Values were checked against WCAG contrast (numeral vs its own body ≥4.5:1,
+   body vs its tray ≥3:1 except ivory's protected jet secondary, primary body
+   vs secondary body ≥1.8:1 so the pair reads as two colours, not one). */
 
 /* =========================================================================
    COLOUR SCHEMES
-   Each scheme defines:
-     body:        fill colour for the cream/primary die
-     bodyDark:    fill colour for the dark/inverted die (advantage/disadvantage)
-     numeral:     numeral colour on a cream/primary die
-     numeralDark: numeral colour on the dark/inverted die
-     stroke:      edge line colour on a cream/primary die
-     strokeDark:  edge line colour on the dark/inverted die
+   Each scheme has a `tray` (the theme it's designed for), a `label` (shown
+   in the dropdown), and two roles — `primary` and `secondary` — the two
+   dice colours used in Advantage/Disadvantage rolls (see die.colorRole in
+   state.js/roll.js). Each role defines:
+     body:    fill colour for the die
+     numeral: numeral colour on that body
+     stroke:  edge line colour on that body (always the numeral colour at
+              ~45% alpha, i.e. hex + "73")
    ========================================================================= */
 const COLOUR_SCHEMES = {
   ivory: {
-    // Ivory & Jet — pairs with green felt (#0e451c dark green)
-    body:        '#f0e6cc',   // warm ivory — bright on dark green
-    bodyDark:    '#1a1a1a',   // jet black — distinct from green, cream numeral reads
-    numeral:     '#1a1a1a',   // jet on ivory
-    numeralDark: '#f0e6cc',   // ivory on jet
-    stroke:      '#1a1a1a73',
-    strokeDark:  '#f0e6cc73',
+    tray: 'green-felt',
+    label: 'Ivory & Jet',
+    // Protected default — cream vs jet, the one deliberate inversion.
+    primary:   { body: '#f0e6cc', numeral: '#1a1a1a', stroke: '#1a1a1a73' },
+    secondary: { body: '#1a1a1a', numeral: '#f0e6cc', stroke: '#f0e6cc73' },
   },
-  scarlet: {
-    // Scarlet & Gold — pairs with ivory marble (#ddd6c8 pale stone)
-    body:        '#63001a',   // deep scarlet — dark on pale stone
-    bodyDark:    '#d4a017',   // dark gold — different warm dark on pale stone
-    numeral:     '#EAE86F',   // bright gold on scarlet
-    numeralDark: '#63001a',   // pale cream on gold
-    stroke:      '#EAE86F73',
-    strokeDark:  '#63001a',
+  heraldic: {
+    tray: 'green-felt',
+    label: 'Gold & Crimson',
+    primary:   { body: '#e3b23c', numeral: '#3a2000', stroke: '#3a200073' },
+    secondary: { body: '#e35a3f', numeral: '#3a0a00', stroke: '#3a0a0073' },
   },
-  cobalt: {
-    // Cobalt & Amber — pairs with parchment (#e0bf77 warm amber)
-    body:        '#1a2e60',   // deep cobalt — dark on amber, cool contrast
-    bodyDark:    '#e89b02',   // burnt sienna — dark on amber, warm contrast
-    numeral:     '#e8d898',   // pale gold on cobalt
-    numeralDark: '#1a2e60',   // same pale gold on sienna — unified parchment palette
-    stroke:      '#e8d89873',
-    strokeDark:  '#1a2e60',
+  pearl: {
+    tray: 'green-felt',
+    label: 'Pearl & Teal',
+    primary:   { body: '#ece6da', numeral: '#1a2420', stroke: '#1a242073' },
+    secondary: { body: '#46b5a8', numeral: '#062420', stroke: '#06242073' },
   },
+
   amethyst: {
-    // Amethyst & Silver — pairs with midnight velvet (#2a1733 dark purple)
-    body:        '#e8e8f0',   // pale amethyst — luminous on dark purple
-    bodyDark:    '#ba3cd6',   // cool silver-white — bright on dark purple
-    numeral:     '#ae30db',   // near-black violet on pale amethyst
-    numeralDark: '#ddd7de',   // deep purple on silver
-    stroke:      '#2a105073',
-    strokeDark:  '#ddd7de',
+    tray: 'midnight-velvet',
+    label: 'Amethyst & Gold',
+    primary:   { body: '#b070e8', numeral: '#2a0a3a', stroke: '#2a0a3a73' },
+    secondary: { body: '#f0c860', numeral: '#3a2400', stroke: '#3a240073' },
   },
+  starlight: {
+    tray: 'midnight-velvet',
+    label: 'Starlight & Nebula',
+    primary:   { body: '#ffe9a8', numeral: '#3a2a00', stroke: '#3a2a0073' },
+    secondary: { body: '#2aa8ba', numeral: '#00343a', stroke: '#00343a73' },
+  },
+  spectre: {
+    tray: 'midnight-velvet',
+    label: 'Bone & Spectral Green',
+    primary:   { body: '#e8e0d0', numeral: '#22201a', stroke: '#22201a73' },
+    secondary: { body: '#3aa066', numeral: '#082a15', stroke: '#082a1573' },
+  },
+
   ember: {
-    // Ember & Frost — pairs with weathered slate (#141820 near-black blue-grey)
-    body:        '#e8641e',   // vivid ember-orange — warm and bright on near-black
-    bodyDark:    '#c8d8e8',   // cool silver-blue frost — bright and cold on near-black
-    numeral:     '#0e0c0a',   // near-black on orange
-    numeralDark: '#02968d',   // dark slate on frost
-    stroke:      '#0e0c0a73',
-    strokeDark:  '#1c243073',
-  },
-  obsidian: {
-    // Obsidian & Jade — pairs with ivory marble (#ddd6c8 pale stone)
-    body:        '#0a0c0a',   // obsidian black — stark on pale stone
-    bodyDark:    '#02e39c',   // deep malachite — also reads on pale stone
-    numeral:     '#02e39c',   // vivid jade on black
-    numeralDark: '#000000',   // pale jade on deep malachite
-    stroke:      '#48c89073',
-    strokeDark:  '#000000',
+    tray: 'weathered-slate',
+    label: 'Ember & Frost',
+    primary:   { body: '#e8641e', numeral: '#1a0a00', stroke: '#1a0a0073' },
+    secondary: { body: '#c8d8e8', numeral: '#101c28', stroke: '#101c2873' },
   },
   copper: {
-    // Copper & Verdigris — pairs with weathered slate (#141820 near-black)
-    body:        '#ff9f29',   // burnished copper — warm bright on near-black
-    bodyDark:    '#4ab8a0',   // verdigris — cool bright on near-black
-    numeral:     '#100800',   // near-black on copper
-    numeralDark: '#a15a03',   // near-black on verdigris
-    stroke:      '#10080073',
-    strokeDark:  '#0a1a1473',
+    tray: 'weathered-slate',
+    label: 'Copper & Verdigris',
+    primary:   { body: '#ff9f29', numeral: '#241000', stroke: '#24100073' },
+    secondary: { body: '#1e7562', numeral: '#ffffff', stroke: '#ffffff73' },
   },
-  wine: {
-    // Wine & Bone — pairs with green felt (#0e451c dark green)
-    body:        '#500a20',   // deep wine — warm dark on dark green
-    bodyDark:    '#e0d4b8',   // aged bone — bright on dark green
-    numeral:     '#e0d4b8',   // bone on wine
-    numeralDark: '#500a20',   // wine on bone
-    stroke:      '#e0d4b873',
-    strokeDark:  '#500a2073',
+  signal: {
+    tray: 'weathered-slate',
+    label: 'Steel & Signal Red',
+    primary:   { body: '#b9c6d4', numeral: '#141c24', stroke: '#141c2473' },
+    secondary: { body: '#f0503c', numeral: '#2a0400', stroke: '#2a040073' },
   },
-  midnight: {
-    // Midnight & Dawn — pairs with midnight velvet (#2a1733 dark purple)
-    body:        '#102050',   // warm dawn-peach — light and warm on dark purple
-    bodyDark:    '#02a3c7',   // deep midnight navy — distinct dark from purple
-    numeral:     '#e8c8a0',   // navy on dawn
-    numeralDark: '#e8c8a0',   // dawn on navy
-    stroke:      '#e8c8a073',
-    strokeDark:  '#d4760473',
+
+  manuscript: {
+    tray: 'parchment',
+    label: 'Ink & Vermilion',
+    primary:   { body: '#1e2a44', numeral: '#e8d898', stroke: '#e8d89873' },
+    secondary: { body: '#a8321e', numeral: '#fce8d4', stroke: '#fce8d473' },
   },
-  parchment: {
-    // Parchment & Ink — pairs with parchment (#e0bf77 warm amber)
-    body:        '#e8d898',   // dark ink-brown — deep warm dark on amber
-    bodyDark:    '#1a2840',   // dark ink-blue — cool dark on amber
-    numeral:     '#016131',   // pale script-gold on brown
-    numeralDark: '#e8d898',   // same pale script-gold on blue
-    stroke:      '#1a284073',
-    strokeDark:  '#e8d89873',
+  oxblood: {
+    tray: 'parchment',
+    label: 'Oxblood & Moss',
+    primary:   { body: '#5a1a20', numeral: '#eddac0', stroke: '#eddac073' },
+    secondary: { body: '#456a30', numeral: '#e4ecd4', stroke: '#e4ecd473' },
+  },
+  sepia: {
+    tray: 'parchment',
+    label: 'Umber & Indigo',
+    primary:   { body: '#4a3018', numeral: '#ecd8a8', stroke: '#ecd8a873' },
+    secondary: { body: '#4a5ab0', numeral: '#dce0f4', stroke: '#dce0f473' },
+  },
+
+  imperial: {
+    tray: 'ivory-marble',
+    label: 'Scarlet & Cobalt',
+    primary:   { body: '#7a0f22', numeral: '#f4e4c8', stroke: '#f4e4c873' },
+    secondary: { body: '#4666ae', numeral: '#e0e8f8', stroke: '#e0e8f873' },
+  },
+  obsidian: {
+    tray: 'ivory-marble',
+    label: 'Obsidian & Jade',
+    primary:   { body: '#14181a', numeral: '#5be0a8', stroke: '#5be0a873' },
+    secondary: { body: '#14503c', numeral: '#a8f0cc', stroke: '#a8f0cc73' },
+  },
+  porphyry: {
+    tray: 'ivory-marble',
+    label: 'Porphyry & Bronze',
+    primary:   { body: '#5c2233', numeral: '#f0d8c0', stroke: '#f0d8c073' },
+    secondary: { body: '#7a5624', numeral: '#f4e8c8', stroke: '#f4e8c873' },
   },
 };
 
@@ -111,19 +132,14 @@ let schemeCustomised = false;
 
 // Paired dice colour scheme for each tray (used when dice haven't been customised)
 const TRAY_DEFAULT_SCHEME = {
-  'green-felt':      'ivory',       // ivory & jet
-  'ivory-marble':    'scarlet',     // scarlet & gold
-  'parchment':       'midnight',      // midnight & dawn
-  'midnight-velvet': 'amethyst',    // amethyst & silver
-  'weathered-slate': 'wine',       // wine & bone
+  'green-felt':      'ivory',       // Ivory & Jet
+  'ivory-marble':    'imperial',    // Scarlet & Cobalt
+  'parchment':       'manuscript',  // Ink & Vermilion
+  'midnight-velvet': 'amethyst',    // Amethyst & Gold
+  'weathered-slate': 'ember',       // Ember & Frost
 };
 
 function getDieColors(die) {
   const scheme = COLOUR_SCHEMES[currentScheme] || COLOUR_SCHEMES.ivory;
-  const isDark = die.colorScheme === 'dark';
-  return {
-    body:    isDark ? scheme.bodyDark    : scheme.body,
-    numeral: isDark ? scheme.numeralDark : scheme.numeral,
-    stroke:  isDark ? scheme.strokeDark  : scheme.stroke,
-  };
+  return die.colorRole === 'secondary' ? scheme.secondary : scheme.primary;
 }

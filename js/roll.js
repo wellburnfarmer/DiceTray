@@ -47,17 +47,17 @@ function buildAdvantageGroups() {
   const groups = [];
   let pairCounter = 1000000;
 
-  const schemeFor = (role) => (role === advCreamRole ? 'cream' : 'dark');
+  const roleFor = (advRole) => (advRole === advPrimaryRole ? 'primary' : 'secondary');
 
   dice.forEach((die) => {
     if (die.isPercentileUnit) return;
 
     die.advRole = 'original';
-    die.colorScheme = schemeFor('original');
+    die.colorRole = roleFor('original');
 
     if (die.sides === 100) {
       die.unitDie.advRole = 'original';
-      die.unitDie.colorScheme = schemeFor('original');
+      die.unitDie.colorRole = roleFor('original');
 
       const dupTens = buildFreshDie(100);
       const dupUnits = buildFreshDie(10, true);
@@ -68,8 +68,8 @@ function buildAdvantageGroups() {
       dupTens.unitDie = dupUnits;
       dupTens.advRole = 'duplicate';
       dupUnits.advRole = 'duplicate';
-      dupTens.colorScheme = schemeFor('duplicate');
-      dupUnits.colorScheme = schemeFor('duplicate');
+      dupTens.colorRole = roleFor('duplicate');
+      dupUnits.colorRole = roleFor('duplicate');
 
       doubledDice.push(die, die.unitDie, dupTens, dupUnits);
       groups.push({
@@ -80,7 +80,7 @@ function buildAdvantageGroups() {
     } else {
       const duplicate = buildFreshDie(die.sides);
       duplicate.advRole = 'duplicate';
-      duplicate.colorScheme = schemeFor('duplicate');
+      duplicate.colorRole = roleFor('duplicate');
       doubledDice.push(die, duplicate);
       groups.push({ kind: 'single', original: die, duplicate });
     }
@@ -142,7 +142,7 @@ function rollAdvantage(keepHigh) {
         }
       });
 
-      advCreamRole = winningRole;
+      advPrimaryRole = winningRole;
 
       // Score using the winners' values (scoreAndRecordRoll reads from dice,
       // so temporarily point dice at winners just for scoring, then restore
@@ -153,14 +153,10 @@ function rollAdvantage(keepHigh) {
       dice = savedDice;
 
       // Update picker icons immediately to reflect the winning die's colour.
-      // We read colorScheme directly from the winner rather than going through
-      // advCreamRole, which can become out of sync across multiple rolls.
-      const winnerScheme = winners.find((d) => !d.isPercentileUnit);
-      const altIsWinning = winnerScheme && winnerScheme.colorScheme === 'dark';
-      const pickerScheme = COLOUR_SCHEMES[currentScheme] || COLOUR_SCHEMES.ivory;
-      const pickerRoot = document.documentElement;
-      pickerRoot.style.setProperty('--color-picker-icon', altIsWinning ? pickerScheme.bodyDark  : pickerScheme.body);
-      pickerRoot.style.setProperty('--color-die-stroke',  altIsWinning ? pickerScheme.strokeDark : pickerScheme.stroke);
+      // We read colorRole directly from the winner rather than going through
+      // advPrimaryRole, which can become out of sync across multiple rolls.
+      const winnerDie = winners.find((d) => !d.isPercentileUnit);
+      updatePickerIconColors(winnerDie && winnerDie.colorRole);
 
       renderDiceCanvas();
 

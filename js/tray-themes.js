@@ -202,8 +202,8 @@ function applyTrayTheme(themeKey) {
   // Swap background image (JPEG, scales via CSS background-size:cover)
   document.getElementById('bg-layer').style.backgroundImage = `url("${textureUrl(`bg_${themeKey}.jpg`)}")`;
 
-  // Update the option background in the colour-scheme-selects to match
-  document.querySelectorAll('.colour-scheme-select option').forEach(opt => {
+  // Update the option/optgroup background in the colour-scheme-selects to match
+  document.querySelectorAll('.colour-scheme-select option, .colour-scheme-select optgroup').forEach(opt => {
     opt.style.background = theme['color-dropdown-bg'];
     opt.style.color = theme['color-text'];
   });

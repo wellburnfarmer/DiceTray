@@ -28,6 +28,30 @@ clearBtn.onclick = clearAll;
    ========================================================================= */
 const colourSchemeSelect = document.getElementById('colour-scheme-select');
 
+// Build the dropdown from COLOUR_SCHEMES, grouped into an <optgroup> per
+// tray (using that tray's own display label) so the tray pairing is visible.
+// Must run before applyTrayTheme('green-felt') below, which restyles these
+// option/optgroup elements to match the active tray.
+const schemesByTray = {};
+Object.keys(COLOUR_SCHEMES).forEach((key) => {
+  const scheme = COLOUR_SCHEMES[key];
+  (schemesByTray[scheme.tray] = schemesByTray[scheme.tray] || []).push(key);
+});
+Object.keys(TRAY_THEMES).forEach((trayKey) => {
+  const keys = schemesByTray[trayKey];
+  if (!keys) return;
+  const group = document.createElement('optgroup');
+  group.label = TRAY_THEMES[trayKey].label;
+  keys.forEach((key) => {
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = COLOUR_SCHEMES[key].label;
+    group.appendChild(opt);
+  });
+  colourSchemeSelect.appendChild(group);
+});
+colourSchemeSelect.value = currentScheme;
+
 // Track the selected scheme separately from the native select value.
 colourSchemeSelect.addEventListener('change', () => {
   const val = colourSchemeSelect.value;
