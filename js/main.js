@@ -28,28 +28,27 @@ clearBtn.onclick = clearAll;
    ========================================================================= */
 const colourSchemeSelect = document.getElementById('colour-scheme-select');
 
-// Build the dropdown from COLOUR_SCHEMES, grouped into an <optgroup> per
-// tray (using that tray's own display label) so the tray pairing is visible.
-// Must run before applyTrayTheme('green-felt') below, which restyles these
-// option/optgroup elements to match the active tray.
-const schemesByTray = {};
-Object.keys(COLOUR_SCHEMES).forEach((key) => {
-  const scheme = COLOUR_SCHEMES[key];
-  (schemesByTray[scheme.tray] = schemesByTray[scheme.tray] || []).push(key);
-});
-Object.keys(TRAY_THEMES).forEach((trayKey) => {
-  const keys = schemesByTray[trayKey];
-  if (!keys) return;
-  const group = document.createElement('optgroup');
-  group.label = TRAY_THEMES[trayKey].label;
-  keys.forEach((key) => {
+// Build the flat option list from COLOUR_SCHEMES, with the active tray's own
+// three schemes moved to the top (in declaration order) followed by
+// everything else (also in declaration order) — no <optgroup> sections, just
+// a reordering so the relevant schemes are what you see first. Called again
+// whenever the tray theme changes (see the tray-theme-select listener below).
+function rebuildColourSchemeOptions(trayKey) {
+  const keys = Object.keys(COLOUR_SCHEMES);
+  const forTray = keys.filter((key) => COLOUR_SCHEMES[key].tray === trayKey);
+  const rest = keys.filter((key) => COLOUR_SCHEMES[key].tray !== trayKey);
+  colourSchemeSelect.innerHTML = '';
+  [...forTray, ...rest].forEach((key) => {
     const opt = document.createElement('option');
     opt.value = key;
     opt.textContent = COLOUR_SCHEMES[key].label;
-    group.appendChild(opt);
+    colourSchemeSelect.appendChild(opt);
   });
-  colourSchemeSelect.appendChild(group);
-});
+}
+
+// Must run before applyTrayTheme('green-felt') below, which restyles these
+// option elements to match the active tray.
+rebuildColourSchemeOptions('green-felt');
 colourSchemeSelect.value = currentScheme;
 
 // Track the selected scheme separately from the native select value.
@@ -113,16 +112,19 @@ document.getElementById('dice-canvas').addEventListener('click', handleCanvasCli
    ========================================================================= */
 document.getElementById('tray-theme-select').addEventListener('change', (e) => {
   const trayKey = e.target.value;
-  applyTrayTheme(trayKey);
 
   // Auto-pair dice colours when the user hasn't manually customised them
   if (!schemeCustomised) {
     const paired = TRAY_DEFAULT_SCHEME[trayKey];
-    if (paired && COLOUR_SCHEMES[paired]) {
-      currentScheme = paired;
-      colourSchemeSelect.value = paired;
-    }
+    if (paired && COLOUR_SCHEMES[paired]) currentScheme = paired;
   }
+
+  // Rebuild so this tray's three schemes are at the top, then restore the
+  // (possibly just auto-paired) selection, before applyTrayTheme restyles
+  // the (freshly rebuilt) option elements to match the new tray.
+  rebuildColourSchemeOptions(trayKey);
+  colourSchemeSelect.value = currentScheme;
+  applyTrayTheme(trayKey);
 
   updatePickerIconColors();
 
