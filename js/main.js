@@ -111,7 +111,7 @@ document.getElementById('tray-theme-select').addEventListener('change', (e) => {
 const downloadBtn = document.getElementById('download-btn');
 // Bundling needs fetch() of the app's own source files, which is rejected
 // outright on a file:// origin — and if this page is itself a bundled copy
-// (EMBEDDED_TEXTURES set) there's nothing left to fetch anyway. css/results.css
+// (EMBEDDED_TEXTURES set) there's nothing left to fetch anyway. css/controls.css
 // already hides the button via html[data-bundled]; this covers the plain
 // "downloaded/cloned the folder and opened index.html directly" case, which
 // carries no data-bundled marker.
