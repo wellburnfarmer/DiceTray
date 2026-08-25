@@ -106,6 +106,22 @@ document.getElementById('tray-theme-select').addEventListener('change', (e) => {
 });
 
 /* =========================================================================
+   DOWNLOAD OFFLINE COPY
+   ========================================================================= */
+const downloadBtn = document.getElementById('download-btn');
+// Bundling needs fetch() of the app's own source files, which is rejected
+// outright on a file:// origin — and if this page is itself a bundled copy
+// (EMBEDDED_TEXTURES set) there's nothing left to fetch anyway. css/results.css
+// already hides the button via html[data-bundled]; this covers the plain
+// "downloaded/cloned the folder and opened index.html directly" case, which
+// carries no data-bundled marker.
+if (EMBEDDED_TEXTURES || location.protocol === 'file:') {
+  downloadBtn.remove();
+} else {
+  downloadBtn.onclick = () => handleOfflineDownload(downloadBtn);
+}
+
+/* =========================================================================
    IMAGE PRELOAD
    ========================================================================= */
 preloadTrayImages();
@@ -116,3 +132,12 @@ preloadTrayImages();
 rebuildField();
 applyTrayTheme('green-felt');
 updatePickerIconColors();
+
+// Canvas text (js/render.js) does not trigger webfont loading and does not
+// repaint when a font arrives later, so the very first render of the die
+// numerals can land in the fallback serif before Almendra has loaded.
+// renderDiceCanvas() is cheap and idempotent, so an unconditional redraw
+// once fonts are ready is free insurance.
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(renderDiceCanvas);
+}

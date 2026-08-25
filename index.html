@@ -33,7 +33,7 @@ SOFTWARE.
      generic families named in css/theme.css when offline. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Almendra:opsz,wght@9..144,400;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;700&family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&family=Rajdhani:wght@400;500;600;700&family=Uncial+Antiqua&family=Share+Tech+Mono&family=Playfair+Display:wght@400;600;700&family=Courier+Prime:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Almendra:opsz,wght@9..144,400;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;700&family=IM+Fell+English:ital@0;1&family=Rajdhani:wght@400;500;600;700&family=Uncial+Antiqua&family=Share+Tech+Mono&family=Playfair+Display:wght@400;600;700&family=Courier+Prime:wght@400;700&display=swap">
 
 <link rel="stylesheet" href="css/theme.css">
 <link rel="stylesheet" href="css/base.css">
@@ -106,6 +106,10 @@ SOFTWARE.
     <div class="history-title">Recent rolls</div>
     <div id="history-rows"></div>
   </div>
+
+  <div class="tray-footer">
+    <button class="download-btn" id="download-btn" title="Save a single self-contained HTML file that works fully offline, with no download folder needed">Download offline copy</button>
+  </div>
 </div>
 
 <!-- Classic scripts, loaded in dependency order. Everything below is plain
@@ -113,6 +117,7 @@ SOFTWARE.
      directly from disk (file://) with no server and no build step.
      js/main.js is loaded last — it's the only file that runs any code at
      load time; every other file just declares data/functions. -->
+<script src="js/assets.js"></script>
 <script src="js/dice-geometry.js"></script>
 <script src="js/colour-schemes.js"></script>
 <script src="js/math.js"></script>
@@ -127,6 +132,7 @@ SOFTWARE.
 <script src="js/interaction.js"></script>
 <script src="js/tray-themes.js"></script>
 <script src="js/preload.js"></script>
+<script src="js/bundler.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

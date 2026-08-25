@@ -1,5 +1,6 @@
-/* results.css — the roll total display, the recent-rolls history list, and
-   the small-viewport media query for the header. */
+/* results.css — the roll total display, the recent-rolls history list, the
+   footer that holds the "Download offline copy" button, and the
+   small-viewport media query for the header. */
 
 .roll-total {
   width: 100%;
@@ -35,6 +36,29 @@
 .history-row { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; border-bottom: 1px solid var(--color-separator-subtle); }
 .history-row .h-total { color: var(--color-text); flex-shrink: 0; }
 .history-row .h-summary { opacity: 0.8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.tray-footer { width: 100%; display: flex; justify-content: center; margin-top: 18px; }
+.download-btn {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: none;
+  border: 1px solid var(--color-btn-border);
+  color: var(--color-text-secondary);
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  min-width: 190px;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.download-btn:hover:not(:disabled) { background: var(--color-btn-hover); border-color: var(--color-accent); color: var(--color-text); }
+.download-btn:disabled { opacity: 0.6; cursor: progress; }
+.download-btn:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.download-btn.is-error { border-color: var(--color-btn-clear); color: var(--color-btn-clear); }
+/* Hidden immediately by CSS in a bundled copy (no fetch is possible from
+   file://, and there's nothing left to bundle), before main.js even runs. */
+html[data-bundled] .tray-footer { display: none; }
 
 @media (max-width: 480px) {
   .tray-title { font-size: 23px; }

@@ -18,3 +18,4 @@ The app is a static site (`index.html` plus `css/`, `js/`, and `textures/`) with
 
 - Download or clone the whole folder and open `index.html` — it works fully offline (Google Fonts excepted)
 - Host the whole folder anywhere that serves static files
+- Click **Download offline copy** in the app itself to save a single self-contained HTML file with every theme, texture, and font baked in — reopen it from anywhere with no folder and no network at all. This only works while the app is loaded over http(s) (it needs to fetch its own source files), so the button doesn't appear when running from a `file://`-opened copy or from an already-bundled download.
