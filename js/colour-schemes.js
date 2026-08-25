@@ -39,7 +39,7 @@ const COLOUR_SCHEMES = {
   },
   heraldic: {
     tray: 'green-felt',
-    label: 'Gold & Crimson',
+    label: 'Gold & Flame',
     primary:   { body: '#e3b23c', numeral: '#3a2000', stroke: '#3a200073' },
     secondary: { body: '#e35a3f', numeral: '#3a0a00', stroke: '#3a0a0073' },
   },
@@ -109,7 +109,7 @@ const COLOUR_SCHEMES = {
 
   imperial: {
     tray: 'ivory-marble',
-    label: 'Scarlet & Cobalt',
+    label: 'Crimson & Cobalt',
     primary:   { body: '#7a0f22', numeral: '#f4e4c8', stroke: '#f4e4c873' },
     secondary: { body: '#4666ae', numeral: '#e0e8f8', stroke: '#e0e8f873' },
   },
@@ -133,7 +133,7 @@ let schemeCustomised = false;
 // Paired dice colour scheme for each tray (used when dice haven't been customised)
 const TRAY_DEFAULT_SCHEME = {
   'green-felt':      'ivory',       // Ivory & Jet
-  'ivory-marble':    'imperial',    // Scarlet & Cobalt
+  'ivory-marble':    'imperial',    // Crimson & Cobalt
   'parchment':       'manuscript',  // Ink & Vermilion
   'midnight-velvet': 'amethyst',    // Amethyst & Gold
   'weathered-slate': 'ember',       // Ember & Frost
